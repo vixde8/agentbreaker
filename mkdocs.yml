@@ -1,0 +1,97 @@
+site_name: AgentBreaker
+site_description: Inline circuit breaker for LLM agents. Stop runaway AI before it burns your budget.
+site_url: https://vixde8.github.io/agentbreaker
+repo_name: agentbreaker
+repo_url: https://github.com/vixde8/agentbreaker
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/YOUR_USERNAME/agentbreaker
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/agentbreaker/
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+
+plugins:
+  - search
+  - glightbox
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - def_list
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quickstart: quickstart.md
+    - Troubleshooting: troubleshooting.md
+  - Concepts:
+    - How It Works: concepts/how-it-works.md
+    - Rule Engine: concepts/rule-engine.md
+  - Integrations:
+    - LangChain: integrations/langchain.md
+    - OpenAI Agents SDK: integrations/openai-agents.md
+  - API Reference: api.md
+  - Changelog: changelog.md
