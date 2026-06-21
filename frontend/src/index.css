@@ -1,30 +1,231 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0b0f19;
+  --surface-glow: radial-gradient(ellipse at top, rgba(20, 184, 166, 0.08) 0%, rgba(11, 15, 25, 0) 65%);
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Space Grotesk', monospace;
+  
+  /* Natural Minimal Colors */
+  --accent: #14B8A6; /* Clean Teal */
+  --accent-rgb: 20, 184, 166;
+  --crimson: #F87171; /* Coral Rose */
+  --crimson-rgb: 248, 113, 113;
+  --emerald: #10B981; /* Mint Green */
+  --emerald-rgb: 16, 185, 129;
+  --indigo: #3B82F6; /* Sky Blue */
+  --indigo-rgb: 59, 130, 246;
+  --purple: #8B5CF6; /* Soft Violet */
+  --purple-rgb: 139, 92, 246;
+  
+  --text-primary: #F9FAFB;
+  --text-muted: #9CA3AF;
+  --text-dark: #4B5563;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(20, 184, 166, 0.35);
+}
 
 body {
-  background: #191716;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  background-image: var(--surface-glow);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  color: #E0E2DB;
+  color: var(--text-primary);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
 }
 
-@keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(230,175,46,0.4); }
-  70%  { box-shadow: 0 0 0 8px rgba(230,175,46,0); }
-  100% { box-shadow: 0 0 0 0 rgba(230,175,46,0); }
+/* Symmetrical Natural Background Overhead Glow */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600px;
+  background: radial-gradient(ellipse at top, rgba(20, 184, 166, 0.06) 0%, rgba(11, 15, 25, 0) 70%);
+  z-index: -1;
+  pointer-events: none;
 }
-@keyframes trip-flash {
-  0%,100% { background: rgba(224,82,82,0.08); }
-  50%     { background: rgba(224,82,82,0.22); }
-}
+
+/* Clean Transitions and Animations */
 @keyframes fadeIn {
-  from { opacity:0; transform:translateY(6px); }
-  to   { opacity:1; transform:translateY(0); }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.live-pulse  { animation: pulse-ring 1.5s infinite; }
-.trip-flash  { animation: trip-flash 1s ease-in-out 3; }
-.fade-in     { animation: fadeIn 0.3s ease; }
+@keyframes heartbeat-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #191716; }
-::-webkit-scrollbar-thumb { background: #2A2825; border-radius: 2px; }
+@keyframes pulse-teal {
+  0% {
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.35);
+    border-color: rgba(20, 184, 166, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(20, 184, 166, 0);
+    border-color: rgba(20, 184, 166, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
+    border-color: rgba(20, 184, 166, 0.2);
+  }
+}
+
+.live-pulse {
+  animation: pulse-teal 2s infinite;
+}
+
+.fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.heartbeat-dot {
+  animation: heartbeat-scale 1.2s ease-in-out infinite;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(9, 11, 16, 0.1);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Symmetrical Glass Panels */
+.glass-panel {
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Custom switch for rules checklist */
+.custom-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.custom-checkbox-wrapper input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.custom-switch-slider {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  transition: 0.2s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.custom-switch-slider::before {
+  content: "";
+  position: absolute;
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #9CA3AF;
+  border-radius: 50%;
+  transition: 0.2s ease-in-out;
+}
+
+.custom-checkbox-wrapper input:checked + .custom-switch-slider {
+  background-color: rgba(20, 184, 166, 0.2);
+  border-color: rgba(20, 184, 166, 0.4);
+}
+
+.custom-checkbox-wrapper input:checked + .custom-switch-slider::before {
+  transform: translateX(16px);
+  background-color: var(--accent);
+}
+
+/* Tabular figures for numbers */
+.tabular-numbers {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Horizontal features carousel styles */
+.scrollable-carousel-row {
+  display: flex;
+  overflow-x: auto;
+  gap: 12px;
+  padding: 8px 4px 16px;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+.scrollable-carousel-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scrollable-carousel-row::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+.carousel-vertical-tab {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-vertical-tab:hover:not(.active-tab) {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  transform: translateX(4px);
+  background: rgba(17, 24, 39, 0.45) !important;
+}
+
+.carousel-vertical-tab.active-tab {
+  background: rgba(20, 184, 166, 0.06) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.05);
+}
+
+/* FAQ Accordion Summary arrow reset */
+.faq-details summary::-webkit-details-marker {
+  display: none;
+}
+.faq-details {
+  transition: all 0.2s ease-in-out;
+}
+.faq-details:hover {
+  border-color: rgba(20, 184, 166, 0.15) !important;
+  background: rgba(17, 24, 39, 0.42) !important;
+}
+.faq-details[open] {
+  border-color: rgba(20, 184, 166, 0.25) !important;
+  background: rgba(17, 24, 39, 0.45) !important;
+}
