@@ -1,0 +1,24 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Env / secrets
+.env
+*.env
+
+# Database
+agentbreaker.db
+*.db
+
+# Node / React
+frontend/node_modules/
+frontend/build/
+frontend/.env
+
+# OS / editor
+.DS_Store
+.vscode/
+*.log
