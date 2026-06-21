@@ -19,12 +19,7 @@ import {
   RefreshCw,
   Search,
   Sparkles,
-  Shield,
-  Layers,
-  ArrowRight,
-  Code,
-  GitBranch,
-  ArrowLeftRight
+  GitBranch
 } from "lucide-react";
 import "./index.css";
 
@@ -857,495 +852,8 @@ function RunDetail({ runId }) {
   );
 }
 
-// ── Landing/Homepage Component ──────────────────────────────────────────────
-function HomePage({ onLaunch }) {
-  const [activeFeature, setActiveFeature] = useState(0);
-  const [autoRotate, setAutoRotate] = useState(true);
-
-  useEffect(() => {
-    if (!autoRotate) return;
-    const timer = setInterval(() => {
-      setActiveFeature(prev => (prev + 1) % 4);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [autoRotate]);
-
-  const features = [
-    {
-      title: "Cost Guardrails",
-      short: "Abort loops instantly when a budget limit is violated.",
-      icon: Coins,
-      color: s.teal,
-      preview: () => (
-        <div style={{ textAlign: "center", padding: "10px 0" }}>
-          <div style={{ fontSize: 11, color: s.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Cumulative Spend Alert</div>
-          <div style={{ fontSize: 32, fontWeight: 900, color: s.red, fontFamily: "var(--font-mono)", marginBottom: 8 }}>$2.0125</div>
-          <div style={{ fontSize: 10, background: "rgba(248,113,113,0.1)", color: s.red, border: `1px solid ${s.red}20`, padding: "4px 10px", borderRadius: 6, display: "inline-block" }}>
-            🔴 Threshold Violations: Limit $2.00
-          </div>
-        </div>
-      )
-    },
-    {
-      title: "Stuck Loop Detector",
-      short: "Interrupt recursive actions executing duplicate tools.",
-      icon: Shield,
-      color: s.red,
-      preview: () => (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-          <div style={{ fontSize: 11, color: s.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Sequential Execution Check</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.02)", padding: "8px 12px", borderRadius: 8, border: `1px solid ${s.border}` }}>
-            <span style={{ fontSize: 11, color: s.light, fontFamily: "var(--font-mono)" }}>mock_search</span>
-            <ArrowLeftRight size={12} style={{ color: s.red }} />
-            <span style={{ fontSize: 11, color: s.light, fontFamily: "var(--font-mono)" }}>mock_search</span>
-          </div>
-          <div style={{ fontSize: 10, color: s.red, fontWeight: 700 }}>🚨 Stuck recursion loops flagged</div>
-        </div>
-      )
-    },
-    {
-      title: "Spend Velocity Limits",
-      short: "Flag fast-burning runs before they consume batch tokens.",
-      icon: Layers,
-      color: s.purple,
-      preview: () => (
-        <div style={{ width: "100%", padding: "5px 0" }}>
-          <div style={{ fontSize: 11, color: s.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, textAlign: "center" }}>10s Spend Acceleration</div>
-          <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden", marginBottom: 6 }}>
-            <div style={{ width: "85%", height: "100%", background: `linear-gradient(90deg, ${s.teal}, ${s.purple})` }} />
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: s.muted }}>
-            <span>Safe Rate: $0.10/10s</span>
-            <span style={{ color: s.purple, fontWeight: 700 }}>Current Rate: $0.48/10s</span>
-          </div>
-        </div>
-      )
-    },
-    {
-      title: "Observability Metrics",
-      short: "Visual charts, iteration graphs, and detailed tool timeline logs.",
-      icon: TrendingUp,
-      color: s.green,
-      preview: () => (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
-          <div style={{ fontSize: 11, color: s.muted, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center", marginBottom: 2 }}>Visual Step Timeline</div>
-          <div style={{ background: "rgba(0,0,0,0.15)", border: `1px solid ${s.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 10.5, fontFamily: "var(--font-mono)", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: s.light }}>Step 1: mock_search</span>
-            <span style={{ color: s.teal }}>+$0.0035</span>
-          </div>
-          <div style={{ background: "rgba(0,0,0,0.15)", border: `1px solid ${s.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 10.5, fontFamily: "var(--font-mono)", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: s.light }}>Step 2: mock_search</span>
-            <span style={{ color: s.teal }}>+$0.0035</span>
-          </div>
-        </div>
-      )
-    }
-  ];
-
-  return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 50, padding: "20px 0 80px" }}>
-      {/* Symmetrical Hero Section */}
-      <div style={{ 
-        textAlign: "center", 
-        maxWidth: 720, 
-        margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center"
-      }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 48,
-          height: 48,
-          borderRadius: 12,
-          background: `linear-gradient(135deg, ${s.teal}, ${s.green})`,
-          boxShadow: `0 0 25px rgba(20, 184, 166, 0.3)`,
-          marginBottom: 20
-        }}>
-          <Zap size={22} style={{ color: s.light }} fill={s.light} />
-        </div>
-        
-        <h1 style={{ 
-          fontSize: 38, 
-          fontWeight: 800, 
-          color: s.light, 
-          letterSpacing: "-0.03em",
-          lineHeight: 1.2,
-          marginBottom: 16
-        }}>
-          Autonomously Safeguard <br/>
-          <span style={{ 
-            background: `linear-gradient(90deg, ${s.teal}, ${s.green})`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
-          }}>AI Agent Loops</span>
-        </h1>
-        
-        <p style={{ 
-          color: s.muted, 
-          fontSize: 14.5, 
-          lineHeight: 1.6,
-          maxWidth: 580,
-          marginBottom: 28
-        }}>
-          AgentBreaker operates at the orchestration layer—monitoring costs, tokens, and velocity live. It intercepts infinite loops, repeated tool triggers, and token spikes, hard-stopping runaway agents before your API bill arrives.
-        </p>
-
-        <button 
-          onClick={onLaunch}
-          style={{
-            background: `linear-gradient(135deg, ${s.teal}, ${s.green})`,
-            color: s.light,
-            border: "none",
-            borderRadius: 8,
-            padding: "12px 28px",
-            fontSize: 13.5,
-            fontWeight: 800,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            boxShadow: `0 4px 14px ${s.tealGlow}`,
-            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-1px)";
-            e.currentTarget.style.boxShadow = `0 6px 18px rgba(20, 184, 166, 0.25)`;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "none";
-            e.currentTarget.style.boxShadow = `0 4px 14px ${s.tealGlow}`;
-          }}
-        >
-          <span>Launch Telemetry Console</span>
-          <ArrowRight size={15} />
-        </button>
-      </div>
-
-      {/* Symmetrical Vertical Carousel with Live Feature Preview */}
-      <div 
-        onMouseEnter={() => setAutoRotate(false)}
-        onMouseLeave={() => setAutoRotate(true)}
-        style={{ maxWidth: 900, width: "100%", margin: "0 auto" }}
-      >
-        <Label style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, justifyContent: "center" }}>
-          <Sliders size={12} style={{ color: s.teal }} />
-          <span>Interactive Guardrail Library</span>
-        </Label>
-        
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "280px 1fr", 
-          gap: 20, 
-          alignItems: "stretch" 
-        }}>
-          {/* Vertical tabs column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {features.map((f, i) => {
-              const Icon = f.icon;
-              const isActive = activeFeature === i;
-              return (
-                <div 
-                  key={i} 
-                  className={`carousel-vertical-tab ${isActive ? "active-tab" : ""}`}
-                  onClick={() => setActiveFeature(i)}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    padding: "14px 16px",
-                    borderRadius: 10,
-                    background: isActive ? "rgba(20, 184, 166, 0.06)" : "rgba(17, 24, 39, 0.35)",
-                    border: `1px solid ${isActive ? s.teal : s.border}`,
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, color: isActive ? f.color : s.light }}>
-                    <Icon size={14} style={{ color: isActive ? f.color : s.muted }} />
-                    <span style={{ fontSize: 11.5, fontWeight: 700 }}>{f.title}</span>
-                  </div>
-                  <div style={{ fontSize: 10, color: s.muted, lineHeight: 1.3 }}>{f.short}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Selected feature preview pane */}
-          <div className="glass-panel" style={{ 
-            borderRadius: 12, 
-            padding: 24, 
-            display: "flex", 
-            flexDirection: "column",
-            justifyContent: "space-between",
-            background: "rgba(17, 24, 39, 0.4)",
-            border: `1px solid ${s.border}`,
-            minHeight: 280
-          }}>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                {(() => {
-                  const Icon = features[activeFeature].icon;
-                  return <Icon size={18} style={{ color: features[activeFeature].color }} />;
-                })()}
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: s.light }}>{features[activeFeature].title}</h3>
-              </div>
-              <p style={{ fontSize: 12, color: s.muted, lineHeight: 1.6 }}>
-                {features[activeFeature].short} Configurable threshold engine values prevent loop overrun issues. Adjust values directly inside the console to test active circuit-breaker responses.
-              </p>
-            </div>
-            
-            <div style={{ 
-              background: "rgba(10, 15, 26, 0.55)", 
-              borderRadius: 10, 
-              border: `1px solid ${s.border}`, 
-              padding: 24,
-              flexGrow: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "inset 0 2px 8px rgba(0, 0, 0, 0.2)"
-            }}>
-              <div style={{ width: "100%", maxWidth: 360 }}>
-                {features[activeFeature].preview()}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Integration Code Mockup */}
-      <div style={{ maxWidth: 900, width: "100%", margin: "0 auto" }}>
-        <Label style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
-          <Code size={12} style={{ color: s.teal }} />
-          <span>Quick Integration SDK</span>
-        </Label>
-        
-        <div style={{ 
-          background: "rgba(10, 15, 26, 0.6)",
-          border: `1px solid ${s.border}`,
-          borderRadius: 12,
-          padding: "16px 20px",
-          textAlign: "left",
-          fontFamily: "var(--font-mono)",
-          fontSize: 12,
-          lineHeight: 1.5,
-          color: "#E5E7EB",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
-          position: "relative",
-          overflow: "hidden"
-        }}>
-          {/* Header row */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${s.border}`, paddingBottom: 10, marginBottom: 12 }}>
-            <div style={{ display: "flex", gap: 6 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.red }} />
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.teal }} />
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.green }} />
-            </div>
-            <div style={{ fontSize: 9.5, color: s.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>main.py</div>
-          </div>
-          
-          <div style={{ overflowX: "auto" }}>
-            <span style={{ color: s.teal }}>from</span> agentbreaker <span style={{ color: s.teal }}>import</span> CircuitBreaker, Rule
-            <br />
-            <br />
-            {"# 1. Define safety policy rules"}
-            <br />
-            rules = [
-            <br />
-            &nbsp;&nbsp;&nbsp;&nbsp;Rule.cost_exceeded(limit_usd=<span style={{ color: s.green }}>2.00</span>),
-            <br />
-            &nbsp;&nbsp;&nbsp;&nbsp;Rule.stuck_loop(min_consecutive_repeats=<span style={{ color: s.green }}>2</span>),
-            <br />
-            &nbsp;&nbsp;&nbsp;&nbsp;Rule.velocity_exceeded(limit_usd=<span style={{ color: s.green }}>0.50</span>, interval_seconds=<span style={{ color: s.green }}>10</span>)
-            <br />
-            ]
-            <br />
-            <br />
-            {"# 2. Wrap LLM execution loop"}
-            <br />
-            breaker = CircuitBreaker(rules=rules)
-            <br />
-            <span style={{ color: s.teal }}>with</span> breaker.monitor(topic=<span style={{ color: s.green }}>"AGI Research"</span>) <span style={{ color: s.teal }}>as</span> run:
-            <br />
-            &nbsp;&nbsp;&nbsp;&nbsp;<span style={{ color: s.teal }}>for</span> step <span style={{ color: s.teal }}>in</span> range(<span style={{ color: s.green }}>10</span>):
-            <br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;response = run.call_llm(prompt)
-            <br />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{"# Auto-checks limits and halts loop if tripped"}
-          </div>
-        </div>
-      </div>
-
-      {/* Symmetrical Architecture Node Diagram */}
-      <div style={{ textAlign: "center", maxWidth: 900, margin: "0 auto", width: "100%" }}>
-        <Label style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
-          <Code size={12} style={{ color: s.teal }} />
-          <span>SDK Execution Path</span>
-        </Label>
-        
-        <div style={{ 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center", 
-          gap: 16, 
-          background: "rgba(17, 24, 39, 0.25)",
-          border: `1px solid ${s.border}`,
-          borderRadius: 12,
-          padding: "20px 24px",
-          flexWrap: "wrap"
-        }}>
-          <div style={{ background: "rgba(10, 15, 26, 0.5)", border: `1px solid ${s.border}`, borderRadius: 8, padding: "8px 16px", fontSize: 11.5, fontWeight: 700, color: s.light }}>
-            SDK Client Wrapper
-          </div>
-          <ArrowRight size={14} style={{ color: s.teal }} />
-          <div style={{ background: "rgba(20, 184, 166, 0.05)", border: `1px solid ${s.teal}30`, borderRadius: 8, padding: "8px 16px", fontSize: 11.5, fontWeight: 700, color: s.teal }}>
-            Circuit Breaker Engine
-          </div>
-          <ArrowRight size={14} style={{ color: s.teal }} />
-          <div style={{ background: "rgba(10, 15, 26, 0.5)", border: `1px solid ${s.border}`, borderRadius: 8, padding: "8px 16px", fontSize: 11.5, fontWeight: 700, color: s.light }}>
-            Safe LLM Executions
-          </div>
-        </div>
-      </div>
-
-      {/* Supported Integrations */}
-      <div style={{ maxWidth: 900, width: "100%", margin: "0 auto", textAlign: "center" }}>
-        <Label style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
-          <Layers size={12} style={{ color: s.teal }} />
-          <span>Supported Frameworks & Orchestrators</span>
-        </Label>
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(5, 1fr)", 
-          gap: 12,
-          marginTop: 8
-        }}>
-          {[
-            { name: "LangChain", desc: "Python & JS SDK" },
-            { name: "LlamaIndex", desc: "Data Agents" },
-            { name: "CrewAI", desc: "Multi-Agent Systems" },
-            { name: "AutoGPT", desc: "Autonomous Loops" },
-            { name: "Semantic Kernel", desc: "Enterprise Orchestration" }
-          ].map((f, i) => (
-            <div key={i} style={{ 
-              background: "rgba(17, 24, 39, 0.25)",
-              border: `1px solid ${s.border}`,
-              borderRadius: 8,
-              padding: "12px 6px",
-              textAlign: "center"
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: s.light, marginBottom: 2 }}>{f.name}</div>
-              <div style={{ fontSize: 8.5, color: s.muted }}>{f.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* FAQ Section */}
-      <div style={{ maxWidth: 900, width: "100%", margin: "0 auto" }}>
-        <Label style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
-          <Shield size={12} style={{ color: s.teal }} />
-          <span>Frequently Asked Questions</span>
-        </Label>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {[
-            {
-              q: "How does AgentBreaker intercept infinite agent loops?",
-              a: "By wrapping your agent's execution layer, AgentBreaker monitors tool calls and costs in real-time. If it detects duplicate tool arguments, consecutive loops, or spend spikes matching your defined policy rules, it triggers a hard Halt exception, stopping runaway executions."
-            },
-            {
-              q: "Does this affect the prompt response latency?",
-              a: "No. The rules engine runs locally in-memory with sub-millisecond validation checks. It inspects metadata of the calls without introducing network overhead or proxy delays to your primary LLM endpoint."
-            },
-            {
-              q: "Is it compatible with custom LLMs and hosting platforms?",
-              a: "Yes. The SDK operates at the orchestration level, meaning it is compatible with Groq, OpenAI, Anthropic, local Llama instances, or any custom API client. It integrates seamlessly into any standard Python or Javascript framework."
-            }
-          ].map((item, idx) => (
-            <details 
-              key={idx} 
-              style={{ 
-                background: "rgba(17, 24, 39, 0.35)", 
-                border: `1px solid ${s.border}`, 
-                borderRadius: 10, 
-                padding: "12px 16px",
-                cursor: "pointer"
-              }}
-              className="faq-details"
-            >
-              <summary style={{ 
-                fontSize: 12.5, 
-                fontWeight: 700, 
-                color: s.light, 
-                outline: "none", 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center",
-                listStyle: "none"
-              }}>
-                <span>{item.q}</span>
-                <span style={{ color: s.teal, fontSize: 14 }}>+</span>
-              </summary>
-              <p style={{ 
-                fontSize: 11.5, 
-                color: s.muted, 
-                lineHeight: 1.6, 
-                marginTop: 10, 
-                borderTop: `1px solid rgba(255,255,255,0.03)`,
-                paddingTop: 8,
-                cursor: "default"
-              }}>
-                {item.a}
-              </p>
-            </details>
-          ))}
-        </div>
-      </div>
-
-      {/* Premium Footer */}
-      <div style={{ 
-        maxWidth: 900, 
-        width: "100%", 
-        margin: "40px auto 0", 
-        paddingTop: 24, 
-        borderTop: `1px solid ${s.border}`,
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center",
-        flexWrap: "wrap",
-        gap: 16
-      }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <Zap size={14} style={{ color: s.teal }} fill={s.teal} />
-            <span style={{ fontSize: 13, fontWeight: 900, color: s.light }}>Agent<span style={{ color: s.teal }}>Breaker</span></span>
-          </div>
-          <div style={{ fontSize: 9.5, color: s.muted }}>Autonomously safeguarding agent loops at the orchestration layer.</div>
-        </div>
-        <div style={{ display: "flex", gap: 16, fontSize: 11, color: s.muted }}>
-          <a href="https://github.com/vixde8/agentbreaker" target="_blank" rel="noreferrer" style={{ color: s.muted, textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = s.teal} onMouseLeave={e => e.target.style.color = s.muted}>Docs</a>
-          <span style={{ color: "rgba(255,255,255,0.1)" }}>|</span>
-          <a href="https://github.com/vixde8/agentbreaker" target="_blank" rel="noreferrer" style={{ color: s.muted, textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = s.teal} onMouseLeave={e => e.target.style.color = s.muted}>Status</a>
-          <span style={{ color: "rgba(255,255,255,0.1)" }}>|</span>
-          <a href="https://github.com/vixde8/agentbreaker" target="_blank" rel="noreferrer" style={{ color: s.muted, textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = s.teal} onMouseLeave={e => e.target.style.color = s.muted}>GitHub</a>
-        </div>
-        <div style={{ fontSize: 9.5, color: s.muted }}>
-          © 2026 AgentBreaker. Open Source under MIT License.
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── App shell ──────────────────────────────────────────────────────────────
 export default function App() {
-  const [page,     setPage]     = useState(
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") 
-      ? "console" 
-      : "home"
-  ); // defaults to console on local dev, home on production
   const [runs,     setRuns]     = useState([]);
   const [selected, setSelected] = useState(null);
 
@@ -1391,7 +899,7 @@ export default function App() {
         gap: 16
       }}>
         {/* Logo and title */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setPage("home")}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ 
             display: "flex",
             alignItems: "center",
@@ -1412,48 +920,6 @@ export default function App() {
 
         {/* Navigation links */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button 
-            onClick={() => setPage("home")}
-            style={{
-              background: page === "home" ? "rgba(255, 255, 255, 0.05)" : "transparent",
-              border: `1px solid ${page === "home" ? s.border : "transparent"}`,
-              color: page === "home" ? s.light : s.muted,
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              fontFamily: "inherit"
-            }}
-          >
-            Product Overview
-          </button>
-          
-          <button 
-            onClick={() => setPage("console")}
-            style={{
-              background: page === "console" ? "rgba(255, 255, 255, 0.05)" : "transparent",
-              border: `1px solid ${page === "console" ? s.border : "transparent"}`,
-              color: page === "console" ? s.light : s.muted,
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              fontFamily: "inherit",
-              display: "flex",
-              alignItems: "center",
-              gap: 4
-            }}
-          >
-            Telemetry Console
-            {runs.some(r => r.status === "running") && (
-              <span className="heartbeat-dot" style={{ width: 6, height: 6, borderRadius: "50%", background: s.teal }} />
-            )}
-          </button>
-
           {/* GitHub Repository Link Button */}
           <a 
             href="https://github.com/vixde8/agentbreaker" 
@@ -1490,102 +956,95 @@ export default function App() {
         </div>
 
         {/* Action Button (Database reset) */}
-        {page === "console" && (
-          <button onClick={handleClear} style={{
-            background: "rgba(248, 113, 113, 0.04)",
-            border: `1px solid rgba(248, 113, 113, 0.15)`,
-            color: "#FCA5A5", 
-            borderRadius: 8, 
-            padding: "8px 16px",
-            fontSize: 11, 
-            fontWeight: 700,
-            cursor: "pointer", 
-            letterSpacing: "0.04em",
-            textTransform: "uppercase", 
-            fontFamily: "inherit",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            transition: "all 0.2s"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(248, 113, 113, 0.08)";
-            e.currentTarget.style.borderColor = s.red;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(248, 113, 113, 0.04)";
-            e.currentTarget.style.borderColor = "rgba(248, 113, 113, 0.15)";
-          }}>
-            <Trash2 size={13} />
-            Reset DB
-          </button>
-        )}
+        <button onClick={handleClear} style={{
+          background: "rgba(248, 113, 113, 0.04)",
+          border: `1px solid rgba(248, 113, 113, 0.15)`,
+          color: "#FCA5A5", 
+          borderRadius: 8, 
+          padding: "8px 16px",
+          fontSize: 11, 
+          fontWeight: 700,
+          cursor: "pointer", 
+          letterSpacing: "0.04em",
+          textTransform: "uppercase", 
+          fontFamily: "inherit",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          transition: "all 0.2s"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(248, 113, 113, 0.08)";
+          e.currentTarget.style.borderColor = s.red;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(248, 113, 113, 0.04)";
+          e.currentTarget.style.borderColor = "rgba(248, 113, 113, 0.15)";
+        }}>
+          <Trash2 size={13} />
+          Reset DB
+        </button>
       </div>
 
-      {/* Main Pages */}
-      {page === "home" ? (
-        <HomePage onLaunch={() => setPage("console")} />
-      ) : (
-        <div className="fade-in">
-          {/* Metrics bar */}
-          <MetricsBar />
+      <div className="fade-in">
+        {/* Metrics bar */}
+        <MetricsBar />
 
-          {/* Console layout */}
-          <div className="dashboard-grid" style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16, alignItems: "start" }}>
-            {/* Left column */}
-            <div>
-              <StartRunForm onStarted={handleStarted} />
-              
-              <div style={{ 
-                fontSize: 10, 
-                fontWeight: 800, 
-                color: s.muted, 
-                textTransform: "uppercase", 
-                letterSpacing: "0.08em", 
-                margin: "20px 0 10px 4px",
-                display: "flex",
-                alignItems: "center",
-                gap: 6
-              }}>
-                <Activity size={10} />
-                <span>Active Policy Executions</span>
-                <span className="tabular-numbers" style={{ 
-                  fontSize: 9, 
-                  background: "rgba(255,255,255,0.05)", 
-                  padding: "1px 5px", 
-                  borderRadius: 4, 
-                  marginLeft: "auto" 
-                }}>{runs.length} runs</span>
-              </div>
-              
-              {runs.length === 0 && (
-                <div className="glass-panel" style={{ 
-                  borderRadius: 10, 
-                  padding: "20px 14px", 
-                  textAlign: "center", 
-                  borderStyle: "dashed" 
-                }}>
-                  <p style={{ color: s.muted, fontSize: 11 }}>No runs stored in the local database.</p>
-                </div>
-              )}
-              
-              <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: 4 }}>
-                {runs.map(r => (
-                  <RunCard 
-                    key={r.run_id} 
-                    run={r}
-                    isSelected={selected === r.run_id}
-                    onClick={() => setSelected(r.run_id)} 
-                  />
-                ))}
-              </div>
+        {/* Console layout */}
+        <div className="dashboard-grid" style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16, alignItems: "start" }}>
+          {/* Left column */}
+          <div>
+            <StartRunForm onStarted={handleStarted} />
+            
+            <div style={{ 
+              fontSize: 10, 
+              fontWeight: 800, 
+              color: s.muted, 
+              textTransform: "uppercase", 
+              letterSpacing: "0.08em", 
+              margin: "20px 0 10px 4px",
+              display: "flex",
+              alignItems: "center",
+              gap: 6
+            }}>
+              <Activity size={10} />
+              <span>Active Policy Executions</span>
+              <span className="tabular-numbers" style={{ 
+                fontSize: 9, 
+                background: "rgba(255,255,255,0.05)", 
+                padding: "1px 5px", 
+                borderRadius: 4, 
+                marginLeft: "auto" 
+              }}>{runs.length} runs</span>
             </div>
-
-            {/* Right column */}
-            <RunDetail runId={selected} />
+            
+            {runs.length === 0 && (
+              <div className="glass-panel" style={{ 
+                borderRadius: 10, 
+                padding: "20px 14px", 
+                textAlign: "center", 
+                borderStyle: "dashed" 
+              }}>
+                <p style={{ color: s.muted, fontSize: 11 }}>No runs stored in the local database.</p>
+              </div>
+            )}
+            
+            <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: 4 }}>
+              {runs.map(r => (
+                <RunCard 
+                  key={r.run_id} 
+                  run={r}
+                  isSelected={selected === r.run_id}
+                  onClick={() => setSelected(r.run_id)} 
+                />
+              ))}
+            </div>
           </div>
+
+          {/* Right column */}
+          <RunDetail runId={selected} />
         </div>
-      )}
+      </div>
     </div>
   );
 }
