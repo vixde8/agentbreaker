@@ -46,7 +46,7 @@ extra_css:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/YOUR_USERNAME/agentbreaker
+      link: https://github.com/vixde8/agentbreaker
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/agentbreaker/
   analytics:
