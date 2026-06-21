@@ -145,7 +145,7 @@ function Label({ children }) {
   );
 }
 
-function Input({ type = "text", value, onChange, step, icon: Icon }) {
+function Input({ type = "text", value, onChange, onBlur, step, icon: Icon }) {
   return (
     <div style={{ position: "relative", width: "100%" }}>
       {Icon && (
@@ -182,6 +182,7 @@ function Input({ type = "text", value, onChange, step, icon: Icon }) {
         onBlur={(e) => {
           e.target.style.borderColor = s.border;
           e.target.style.boxShadow = "none";
+          if (onBlur) onBlur(e);
         }}
       />
     </div>
@@ -217,8 +218,8 @@ function MetricsBar() {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
       <StatBox label="Total Runs"   value={m.total_runs}                     accent={s.mint}   icon={Activity}     glow={s.mint} />
       <StatBox label="Trips Fired"  value={m.total_tripped}                  accent={s.red}    icon={AlertTriangle} glow={s.red} />
-      <StatBox label="Total Spend"  value={`$${m.total_cost_usd.toFixed(4)}`} accent={s.teal}   icon={Coins}        glow={s.teal} />
-      <StatBox label="Est. Saved"   value={`$${m.estimated_cost_saved_usd.toFixed(4)}`} accent={s.green} icon={CheckCircle2} glow={s.green} />
+      <StatBox label="Total Spend"  value={`$${(m.total_cost_usd ?? 0).toFixed(4)}`} accent={s.teal}   icon={Coins}        glow={s.teal} />
+      <StatBox label="Est. Saved"   value={`$${(m.estimated_cost_saved_usd ?? 0).toFixed(4)}`} accent={s.green} icon={CheckCircle2} glow={s.green} />
     </div>
   );
 }
@@ -227,6 +228,7 @@ function MetricsBar() {
 function StartRunForm({ onStarted }) {
   const [topic,   setTopic]   = useState("Why is AGI hard to achieve?");
   const [maxIter, setMaxIter] = useState(6);
+  const [maxCostInput, setMaxCostInput] = useState("2.00");
   const [maxCost, setMaxCost] = useState(2.00);
   const [loading, setLoading] = useState(false);
   const [rules,   setRules]   = useState([]);
@@ -283,7 +285,12 @@ function StartRunForm({ onStarted }) {
         </div>
         <div>
           <Label><Coins size={10} /> Max Cost ($)</Label>
-          <Input type="number" step="0.1" value={maxCost} onChange={e => setMaxCost(Number(e.target.value))} />
+          <Input 
+            type="text" 
+            value={maxCostInput} 
+            onChange={e => setMaxCostInput(e.target.value)} 
+            onBlur={() => setMaxCost(parseFloat(maxCostInput) || 0)} 
+          />
         </div>
       </div>
 
@@ -576,7 +583,7 @@ function RunDetail({ runId }) {
 
   const chartData = (run.iterations || []).map(it => ({
     name: `Step ${it.iteration}`,
-    cost: parseFloat((it.cost * 1000).toFixed(4)),
+    cost: parseFloat(((it.cost ?? 0) * 1000).toFixed(4)),
   }));
 
   const isRunning = run.status === "running";
@@ -663,7 +670,7 @@ function RunDetail({ runId }) {
             <div>
               <div style={{ fontSize: 9, color: s.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Est. Budget Saved</div>
               <div style={{ fontSize: 11, color: s.green, fontWeight: 700, fontFamily: "var(--font-mono)", marginTop: 2 }}>
-                ${(run.total_cost_usd * 2).toFixed(4)}
+                ${((run.total_cost_usd ?? 0) * 2).toFixed(4)}
               </div>
             </div>
           </div>
@@ -715,7 +722,7 @@ function RunDetail({ runId }) {
         <StatBox label="Total Tokens"  value={run.total_tokens.toLocaleString()} icon={Cpu} />
         <StatBox label="Input Tokens"  value={run.total_input_tokens.toLocaleString()} icon={FileText} />
         <StatBox label="Output Tokens" value={run.total_output_tokens.toLocaleString()} icon={FileText} />
-        <StatBox label="Elapsed"       value={`${run.elapsed_seconds.toFixed(1)}s`} icon={Clock} />
+        <StatBox label="Elapsed"       value={`${(run.elapsed_seconds ?? 0).toFixed(1)}s`} icon={Clock} />
         <StatBox label="Tool Calls"    value={run.tool_calls?.length || 0} icon={Database} />
         <StatBox label="Max Iters"     value={run.config?.max_iterations} icon={Sliders} />
         <StatBox label="Max Cost"      value={`$${run.config?.max_cost_usd}`} icon={Coins} />
@@ -812,7 +819,7 @@ function RunDetail({ runId }) {
                         color: stepTripped ? s.red : s.teal,
                         fontWeight: 600
                       }}>
-                        +${it.cost.toFixed(5)} ({it.tokens} tokens)
+                        +${(it.cost ?? 0).toFixed(5)} ({it.tokens} tokens)
                       </span>
                     </div>
 
@@ -1334,7 +1341,11 @@ function HomePage({ onLaunch }) {
 
 // ── App shell ──────────────────────────────────────────────────────────────
 export default function App() {
-  const [page,     setPage]     = useState("home"); // "home" | "console"
+  const [page,     setPage]     = useState(
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") 
+      ? "console" 
+      : "home"
+  ); // defaults to console on local dev, home on production
   const [runs,     setRuns]     = useState([]);
   const [selected, setSelected] = useState(null);
 
