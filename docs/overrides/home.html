@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ── HERO ───────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-badge">⚡ Open Source · MIT License</div>
+
+  <h1>Stop your AI agents<br><span>before they burn your budget</span></h1>
+
+  <p class="hero-sub">
+    AgentBreaker is an inline circuit breaker for LLM agents.
+    It detects stuck loops, token bloat, and cost spikes
+    in real time — and stops the agent before it's too late.
+  </p>
+
+  <div class="hero-actions">
+    <a href="{{ 'quickstart/' | url }}" class="btn-primary">
+      🚀 Get Started — 5 minutes
+    </a>
+    <a href="https://github.com/vixde8/agentbreaker" class="btn-secondary" target="_blank">
+      ⭐ Star on GitHub
+    </a>
+  </div>
+
+  <div class="install-strip">
+    <code>docker compose up --build</code>
+    <span class="copy-hint">↑ that's it</span>
+  </div>
+</div>
+
+<!-- ── FEATURES ───────────────────────────────────────────────── -->
+<div class="features-section">
+  <div class="section-label">Why AgentBreaker</div>
+  <h2 class="section-title">Observability tools watch. AgentBreaker stops.</h2>
+  <p class="section-sub">
+    LangSmith and Langfuse tell you an agent went wrong <em>after the fact</em>.
+    AgentBreaker kills it <em>while it's happening</em>.
+  </p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔁</div>
+      <h3>Argument-Aware Loop Detection</h3>
+      <p>Detects when an agent calls the same tool with identical arguments repeatedly — a true stuck loop, not legitimate deep research.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💸</div>
+      <h3>Real-Time Cost Limits</h3>
+      <p>Set a dollar budget per run. The breaker hard-stops the agent the instant that limit is crossed — not after the API call is billed.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Token Bloat Detection</h3>
+      <p>Catches when a single LLM response is excessively verbose. A question like "Who is the PM of India?" shouldn't return 450 tokens.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Spend Velocity Guard</h3>
+      <p>Monitors how fast money is being spent in a rolling time window. Catches sudden token-rate explosions before they compound.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎛️</div>
+      <h3>Composable Rule Engine</h3>
+      <p>Pick exactly which rules apply per run. Mix and match: cost limit + loop detection + time cap, all configurable from the UI.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <h3>Live Dashboard</h3>
+      <p>Real-time cost trajectory chart, per-call token bars, run history, and side-by-side comparison mode showing cost savings.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔌</div>
+      <h3>LangChain Native</h3>
+      <p>Drop in <code>LangChainCircuitBreakerCallback</code> — no monkey-patching, no code rewrites. Uses LangChain's official callback API.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🐳</div>
+      <h3>Zero-Config Docker Setup</h3>
+      <p>One command to run the full stack: backend API, React dashboard, SQLite database. No environment setup headaches.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🆚</div>
+      <h3>Side-by-Side Comparison</h3>
+      <p>Run the same query with and without the breaker. See the actual cost delta and token savings. Your proof-of-value screenshot.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── VS COMPARISON ──────────────────────────────────────────── -->
+<div class="comparison-section">
+  <div class="section-label">Comparison</div>
+  <h2 class="section-title" style="text-align:center;color:#f9fafb;margin-bottom:0.75rem;">
+    How we're different
+  </h2>
+  <p class="section-sub">Other tools observe. AgentBreaker intervenes.</p>
+
+  <div class="comparison-grid" style="max-width:860px;margin:0 auto;">
+    <div class="comparison-col">
+      <h3>Observability tools (LangSmith, Langfuse)</h3>
+      <div class="comparison-row"><span class="tick">✓</span> See what happened after the run</div>
+      <div class="comparison-row"><span class="tick">✓</span> Great dashboards and traces</div>
+      <div class="comparison-row"><span class="cross">✗</span> Cannot stop a running agent</div>
+      <div class="comparison-row"><span class="cross">✗</span> No cost intervention</div>
+      <div class="comparison-row"><span class="cross">✗</span> No loop detection at runtime</div>
+    </div>
+    <div class="comparison-col better">
+      <h3>AgentBreaker</h3>
+      <div class="comparison-row"><span class="tick">✓</span> Stops the agent in real time</div>
+      <div class="comparison-row"><span class="tick">✓</span> Detects loops by checking arguments</div>
+      <div class="comparison-row"><span class="tick">✓</span> Hard cost caps per run</div>
+      <div class="comparison-row"><span class="tick">✓</span> Token bloat warnings</div>
+      <div class="comparison-row"><span class="tick">✓</span> Native LangChain callback integration</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FRAMEWORKS ─────────────────────────────────────────────── -->
+<div class="frameworks-section">
+  <div class="section-label">Integrations</div>
+  <h2 class="section-title" style="color:#f9fafb;">Works with your stack</h2>
+  <div class="frameworks-pills">
+    <span class="pill">🦜 LangChain</span>
+    <span class="pill">🤖 OpenAI Agents SDK</span>
+    <span class="pill">⚡ Groq</span>
+    <span class="pill">🔮 OpenAI</span>
+    <span class="pill">🟣 Anthropic</span>
+    <span class="pill">🦙 Ollama</span>
+    <span class="pill">🐳 Docker</span>
+  </div>
+</div>
+
+<!-- ── QUICK STEPS ─────────────────────────────────────────────── -->
+<div class="steps-section">
+  <div class="section-label">Quick Start</div>
+  <h2 class="section-title" style="text-align:center;color:#f9fafb;margin-bottom:2rem;">
+    Up and running in 5 minutes
+  </h2>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h3>Clone the repo</h3>
+      <p><code>git clone https://github.com/vixde8/agentbreaker.git && cd agentbreaker</code></p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h3>Get a free Groq API key</h3>
+      <p>No credit card. Visit <a href="https://groq.com" target="_blank">groq.com</a> → sign up → copy your key.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h3>Set your key</h3>
+      <p><code>echo "GROQ_API_KEY=your_key_here" > .env</code></p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h3>Run it</h3>
+      <p><code>docker compose up --build</code> → open <a href="http://localhost:3000" target="_blank">localhost:3000</a></p>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:2rem;">
+    <a href="{{ 'quickstart/' | url }}" class="btn-primary">
+      Full Quickstart Guide →
+    </a>
+  </div>
+</div>
+
+<!-- ── FINAL CTA ───────────────────────────────────────────────── -->
+<div class="cta-section">
+  <h2 style="font-size:2rem;font-weight:800;color:#f9fafb;margin-bottom:0.75rem;">
+    Ready to stop runaway agents?
+  </h2>
+  <p style="color:#9ca3af;margin-bottom:2rem;font-size:1rem;">
+    Open source · MIT License · No account required
+  </p>
+  <div class="hero-actions">
+    <a href="{{ 'quickstart/' | url }}" class="btn-primary">🚀 Get Started</a>
+    <a href="https://github.com/vixde8/agentbreaker" class="btn-secondary" target="_blank">View Source</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer %}{{ super() }}{% endblock %}
