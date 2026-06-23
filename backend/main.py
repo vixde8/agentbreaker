@@ -274,7 +274,13 @@ def get_metrics(db: Session = Depends(get_db)):
 
 @app.delete("/runs")
 def clear_runs(db: Session = Depends(get_db)):
-    """Clear all runs. Useful for demo resets."""
+    """Clear all runs. Restricted to SQLite to preserve collaborative Postgres telemetry."""
+    from database import DATABASE_URL
+    if not DATABASE_URL.startswith("sqlite"):
+        raise HTTPException(
+            status_code=403, 
+            detail="Database reset is disabled for shared Supabase telemetry. Cleanups must be done directly on the Supabase console."
+        )
     db.query(AgentRun).delete()
     db.commit()
     return {"message": "All runs cleared"}
