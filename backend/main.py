@@ -271,12 +271,4 @@ def get_metrics(db: Session = Depends(get_db)):
         "estimated_cost_saved_usd": round(cost_saved, 4),
         "trip_rate_pct": round(len(tripped) / total_runs * 100, 1) if total_runs else 0,
     }
-
-
-@app.delete("/runs")
-def clear_runs(db: Session = Depends(get_db)):
-    """Clear all runs by marking them hidden (soft-delete)."""
-    # Soft delete: update is_hidden to True
-    db.query(AgentRun).update({AgentRun.is_hidden: True})
-    db.commit()
-    return {"message": "All runs cleared"}
+
