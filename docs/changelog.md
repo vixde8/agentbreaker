@@ -4,7 +4,7 @@ All notable changes to AgentBreaker are documented here.
 
 ---
 
-## v2.1.0 — In Progress
+## v2.1.0
 
 ### Added
 - Argument-aware loop detection (`stuck_loop` rule checks tool args, not just names)
