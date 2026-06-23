@@ -127,6 +127,10 @@ def run_agent_with_callback(topic: str, breaker: CircuitBreaker):
         print(f"  📝 Finding: {finding}")
         print(f"  ➡️  Next: {next_question}")
 
+        if "DONE" in next_question.upper():
+            print("  🏁 Agent determined research is complete.")
+            break
+
         time.sleep(0.3)
         current_question = next_question
 
@@ -204,6 +208,10 @@ def run_agent(topic: str, breaker: CircuitBreaker):
             input_tokens=input_tokens,
             output_tokens=output_tokens,
         )
+
+        if "DONE" in next_question.upper():
+            print("  🏁 Agent determined research is complete.")
+            break
 
         time.sleep(0.5)
         current_question = next_question
