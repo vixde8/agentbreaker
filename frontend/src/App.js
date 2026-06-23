@@ -3,7 +3,6 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { 
   Zap, 
   Play, 
-  Trash2, 
   Cpu, 
   Coins, 
   Clock, 
