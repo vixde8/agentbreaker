@@ -381,6 +381,7 @@ body { background: var(--bg); color: var(--text); font-family: "Inter", system-u
 }
 .ab-code-tabs {
   display: flex;
+  justify-content: center;
   border-bottom: 1px solid var(--border);
   background: rgba(255,255,255,0.02);
 }
