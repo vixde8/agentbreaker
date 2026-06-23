@@ -157,7 +157,8 @@ def execute_run(run_id: str, topic: str, rule_engine):
     breaker.record_llm_call = record_and_persist
 
     try:
-        run_agent(topic=topic, breaker=breaker)
+        from realistic_agent import run_realistic_agent
+        run_realistic_agent(topic=topic, breaker=breaker)
         _persist_state(db, run_id, breaker, topic, status="completed")
     except RuntimeError:
         pass  # Already persisted in wrapper above
