@@ -82,6 +82,7 @@ def run_to_response(run: AgentRun) -> dict:
         "ended_at": run.ended_at.isoformat() if run.ended_at else None,
         "config": run.config,
         "iterations": run.iterations or [],
+        "is_hidden": run.is_hidden or False,
     }
 
 
@@ -234,8 +235,8 @@ def start_run(request: StartRunRequest, db: Session = Depends(get_db)):
 
 @app.get("/runs")
 def list_runs(db: Session = Depends(get_db)):
-    """List all runs, most recent first."""
-    runs = db.query(AgentRun).order_by(AgentRun.started_at.desc()).all()
+    """List non-hidden runs, most recent first."""
+    runs = db.query(AgentRun).filter(AgentRun.is_hidden == False).order_by(AgentRun.started_at.desc()).all()
     return [run_to_response(r) for r in runs]
 
 
@@ -250,8 +251,8 @@ def get_run(run_id: str, db: Session = Depends(get_db)):
 
 @app.get("/metrics")
 def get_metrics(db: Session = Depends(get_db)):
-    """Aggregate stats across all runs."""
-    runs = db.query(AgentRun).all()
+    """Aggregate stats across non-hidden runs."""
+    runs = db.query(AgentRun).filter(AgentRun.is_hidden == False).all()
     total_runs = len(runs)
     tripped = [r for r in runs if r.is_tripped]
     total_cost = sum(r.total_cost_usd for r in runs)
@@ -274,13 +275,8 @@ def get_metrics(db: Session = Depends(get_db)):
 
 @app.delete("/runs")
 def clear_runs(db: Session = Depends(get_db)):
-    """Clear all runs. Restricted to SQLite to preserve collaborative Postgres telemetry."""
-    from database import DATABASE_URL
-    if not DATABASE_URL.startswith("sqlite"):
-        raise HTTPException(
-            status_code=403, 
-            detail="Database reset is disabled for shared Supabase telemetry. Cleanups must be done directly on the Supabase console."
-        )
-    db.query(AgentRun).delete()
+    """Clear all runs by marking them hidden (soft-delete)."""
+    # Soft delete: update is_hidden to True
+    db.query(AgentRun).update({AgentRun.is_hidden: True})
     db.commit()
     return {"message": "All runs cleared"}
