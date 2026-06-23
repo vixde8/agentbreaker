@@ -39,6 +39,7 @@ class AgentRun(Base):
     is_tripped      = Column(Boolean, default=False)
     trip_reason     = Column(String, nullable=True)
     trip_message    = Column(String, nullable=True)
+    is_hidden       = Column(Boolean, default=False)
 
     # Token + cost tracking
     total_input_tokens  = Column(Integer, default=0)
