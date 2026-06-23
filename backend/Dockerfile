@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY circuit_breaker.py agent.py database.py main.py rules.py ./
+COPY circuit_breaker.py agent.py database.py main.py rules.py langchain_adapter.py ./
 
 EXPOSE 8000
 

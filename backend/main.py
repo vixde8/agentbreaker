@@ -149,7 +149,8 @@ def _persist_state(db: Session, run_id: str, breaker: CircuitBreaker,
     run.total_tokens        = summary["total_tokens"]
     run.total_cost_usd      = state.total_cost_usd
     run.iteration_count     = state.iteration_count
-    run.tool_calls          = state.tool_calls
+    # Use serialised tool_calls from summary (handles ToolCall objects & legacy strings)
+    run.tool_calls          = summary["tool_calls"]
     run.elapsed_seconds     = summary["elapsed_seconds"]
 
     if status in ("tripped", "completed", "error"):
