@@ -1,5 +1,10 @@
 # OpenAI Agents SDK Integration
 
+Install the package with the openai-agents extra:
+```bash
+pip install agentbreaker-sdk[openai-agents]
+```
+
 !!! warning "Empirical verification required"
     Before building on top of `RunHooks`, verify that `on_llm_end` fires reliably
     in your pinned version of the OpenAI Agents SDK. Some versions have reported
@@ -11,7 +16,7 @@
 ## Basic Sketch
 
 ```python
-from agentbreaker.openai_agents import AgentBreakerRunHooks
+from agentbreaker import AgentBreakerRunHooks
 
 hooks = AgentBreakerRunHooks(
     run_id="my-run-001",

@@ -53,7 +53,7 @@ except ImportError:
         "Install it with: pip install langchain-core"
     )
 
-from circuit_breaker import CircuitBreaker, ToolCall
+from .circuit_breaker import CircuitBreaker, ToolCall
 
 
 class LangChainCircuitBreakerCallback(BaseCallbackHandler):

@@ -24,4 +24,10 @@ frontend/.env
 *.log
 
 # MkDocs build output (never commit — deployed via GitHub Action)
-site/
+site/
+
+# Packaging & test virtualenvs
+dist/
+build/
+*.egg-info/
+venv_smoke/

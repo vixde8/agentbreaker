@@ -4,7 +4,7 @@ OpenAI Agents SDK adapter for AgentBreaker.
 Uses import guards so the backend runs cleanly even if openai-agents is missing.
 """
 import logging
-from circuit_breaker import CircuitBreaker
+from .circuit_breaker import CircuitBreaker
 
 logger = logging.getLogger("agentbreaker.openai_adapter")
 

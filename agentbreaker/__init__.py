@@ -13,7 +13,7 @@ except ImportError:
         def __init__(self, *args, **kwargs):
             raise ImportError(
                 "langchain-core is required to use LangChainCircuitBreakerCallback. "
-                "Install it via: pip install agentbreaker[langchain]"
+                "Install it via: pip install agentbreaker-sdk[langchain]"
             )
 
 # Try importing openai_adapter hook
@@ -24,7 +24,7 @@ except ImportError:
         def __init__(self, *args, **kwargs):
             raise ImportError(
                 "openai-agents is required to use AgentBreakerRunHooks. "
-                "Install it via: pip install agentbreaker[openai-agents]"
+                "Install it via: pip install agentbreaker-sdk[openai-agents]"
             )
 
 __all__ = [
