@@ -1,8 +1,67 @@
-# Quickstart
-
-Get AgentBreaker running locally in under 5 minutes using Docker.
+Get started with AgentBreaker using either the Python SDK library or the full-stack Docker demo.
 
 ---
+
+## Option A: Python SDK (Recommended)
+
+To protect your own LLM agents, install `agentbreaker-sdk` from PyPI:
+
+```bash
+pip install agentbreaker-sdk
+```
+
+Or install with extras depending on your framework:
+```bash
+# For LangChain callback handler
+pip install agentbreaker-sdk[langchain]
+
+# For OpenAI Agents SDK hooks
+pip install agentbreaker-sdk[openai-agents]
+```
+
+### Basic Example
+
+Wrap your agent loop or LLM invocations using the core `CircuitBreaker`:
+
+```python
+from agentbreaker import CircuitBreaker
+
+# 1. Initialize the breaker with rules
+breaker = CircuitBreaker(
+    run_id="run-123",
+    config={
+        "max_cost_usd": 0.05,       # Hard budget limit
+        "max_iterations": 10,       # Stop if agent loops too many times
+    }
+)
+
+# 2. Wrap your LLM invocation loop
+for i in range(15):
+    # (Optional) Record tool calls for stuck loop detection
+    # breaker.record_tool_call(name="search", args={"query": "quantum computing"})
+    
+    # ... call your LLM ...
+    input_tokens = 500
+    output_tokens = 250
+    
+    # 3. Record LLM stats to evaluate rules. 
+    # Raises RuntimeError immediately if a STOP rule trips!
+    breaker.record_llm_call(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens
+    )
+    
+    # (Optional) Record tool results
+    # breaker.record_tool_result(name="search", result="...")
+```
+
+For plug-and-play integrations with agent frameworks, see the [LangChain Integration](integrations/langchain.md) or [OpenAI Agents SDK Integration](integrations/openai-agents.md) guides.
+
+---
+
+## Option B: Full Stack Demo (Docker)
+
+Get the complete AgentBreaker stack (FastAPI backend + React Dashboard) running locally in under 5 minutes.
 
 ## Prerequisites
 
