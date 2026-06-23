@@ -1,12 +1,14 @@
 # LangChain Integration
 
-!!! note "Coming soon"
-    Full integration guide being written.
+Install the package with the langchain extra:
+```bash
+pip install agentbreaker-sdk[langchain]
+```
 
 ## Basic Usage
 
 ```python
-from agentbreaker.langchain import LangChainCircuitBreakerCallback
+from agentbreaker import LangChainCircuitBreakerCallback
 from langchain_groq import ChatGroq
 
 callback = LangChainCircuitBreakerCallback(

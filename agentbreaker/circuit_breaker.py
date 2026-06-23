@@ -20,7 +20,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Optional
 
-from rules import RuleEngine, RuleViolation, Severity, build_default_engine
+from .rules import RuleEngine, RuleViolation, Severity, build_default_engine
 
 
 @dataclass

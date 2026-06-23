@@ -65,6 +65,24 @@ docker-compose.yml
 
 ---
 
+## Installation (Library)
+
+Install the core library from PyPI:
+```bash
+pip install agentbreaker-sdk
+```
+
+Or install with extras for your framework:
+```bash
+# For LangChain callback support
+pip install agentbreaker-sdk[langchain]
+
+# For OpenAI Agents SDK hook support
+pip install agentbreaker-sdk[openai-agents]
+```
+
+---
+
 ## Quick Start (Docker — recommended)
 
 1. Clone the repo:
@@ -127,7 +145,7 @@ npm start
 - [x] Phase 1 — Core breaker logic, demo agent, FastAPI backend, React dashboard
 - [x] Phase 2 — Composable rule engine, per-run rule configuration
 - [ ] Phase 3 — Semantic loop detection, goal drift detection, anomaly baselines
-- [ ] Phase 4 — LangChain callback handler for zero-friction integration, PyPI package
+- [x] Phase 4 — LangChain callback handler for zero-friction integration, PyPI package
 
 ---
 
