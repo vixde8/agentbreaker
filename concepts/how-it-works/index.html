@@ -617,6 +617,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How It Works
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -633,6 +651,58 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#the-inline-interceptor-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Inline Interceptor Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Operation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cost-savings-calculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost Savings Calculator
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -865,6 +935,47 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#the-inline-interceptor-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Inline Interceptor Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Operation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cost-savings-calculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost Savings Calculator
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -884,17 +995,42 @@
 
 
 <h1 id="how-it-works">How It Works</h1>
-<div class="admonition note">
-<p class="admonition-title">Coming soon</p>
-<p>This page is being written. Check back soon.</p>
-</div>
-<p>AgentBreaker sits inside your agent's LLM call loop. After each call it:</p>
+<p>AgentBreaker acts as an active guardrail at the orchestration layer of your AI agents. Unlike logging tools that audit runs after they finish, AgentBreaker runs inline after every step to intercept and terminate runaway loops before they exceed safety budgets.</p>
+<hr>
+<h2 id="the-inline-interceptor-architecture">The Inline Interceptor Architecture</h2>
+<p>Instead of intercepting HTTP requests at the proxy level or using complex monkey-patching, AgentBreaker integrates directly into your agent's event loop via standard framework interfaces (such as LangChain Callbacks or OpenAI Agents RunHooks).</p>
+<pre class="mermaid"><code>graph TD
+    A[Agent Event Loop] --&gt; B[LLM Call / Tool Execution]
+    B --&gt; C[Framework Callback / Hook]
+    C --&gt; D[AgentBreaker Core Engine]
+    D --&gt; E{Evaluate RuleEngine}
+    E --&gt;|STOP Violation| F[Trip Breaker &amp; Raise RuntimeError]
+    E --&gt;|WARN Violation| G[Log Warning &amp; Continue]
+    E --&gt;|All Rules Pass| H[Continue Loop]
+    F --&gt; I[Agent Loop Terminated]
+    H --&gt; A</code></pre>
+<hr>
+<h2 id="step-by-step-operation">Step-by-Step Operation</h2>
+<p>After each LLM call or tool execution, the callback handler delegates tracking to the core engine:</p>
 <ol>
-<li>Updates cumulative metrics (tokens, cost, iterations)</li>
-<li>Runs every active rule against the current state</li>
-<li>Returns a verdict — <strong>PASS</strong>, <strong>WARN</strong>, or <strong>KILL</strong></li>
+<li><strong>State Aggregation</strong>: Updates cumulative metrics on the active <code>RunState</code> object:</li>
+<li>Increments <code>iteration_count</code></li>
+<li>Computes dollar cost based on token prices (e.g. input/output costs) and updates <code>total_cost_usd</code></li>
+<li>Registers elapsed time relative to <code>start_time</code></li>
+<li>Appends token counts and tool call details (name + argument fingerprints)</li>
+<li><strong>Rule Evaluation</strong>: Passes <code>RunState</code> and rule configurations to the <code>RuleEngine</code>. Every registered rule is evaluated in sequence:</li>
+<li><strong>STOP rules</strong> (e.g., <code>cost_exceeded</code>, <code>repeated_tool_calls</code>): Return immediately on first violation.</li>
+<li><strong>WARN rules</strong> (e.g., <code>circling_loop</code>, <code>output_bloat</code>): Are collected and flagged to the dashboard/logs but do not raise an exception.</li>
+<li><strong>Execution Interruption</strong>: If any STOP rule is violated:</li>
+<li>The breaker state is marked <code>is_tripped = True</code>.</li>
+<li>A <code>RuntimeError</code> is raised with a descriptive message outlining exactly which safety rule was triggered.</li>
+<li>The exception bubbles up through the framework, terminating the runaway loop instantly.</li>
 </ol>
-<p>On <strong>KILL</strong>, it raises a <code>RuntimeError</code> that immediately stops the agent loop.</p>
+<hr>
+<h2 id="cost-savings-calculator">Cost Savings Calculator</h2>
+<p>When a breaker trips, AgentBreaker calculates the <strong>estimated savings</strong> by comparing the actual cost of the run against what it would have cost if the agent had continued looping up to its maximum iterations:</p>
+<p>$$\text{Savings} = \left( \frac{\text{Actual Cost}}{\text{Current Iteration}} \times \text{Max Iterations} \right) - \text{Actual Cost}$$</p>
+<p>This estimation is logged to the backend database and rendered on the live dashboard so teams can track exactly how much API budget the breaker is saving.</p>
 
 
 
