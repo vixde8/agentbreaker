@@ -10,6 +10,7 @@ Each scenario was executed in both **Unguarded** (standard safety ceilings only)
 | **simple_info**<br>*Resolves in 2 iterations; verifies no false positives on short successful runs.* | `completed` | 2 / $0.00025 | 2 / $0.00025 | 0 | $0.00000 (0.0%) | `-` | **✅ PASS** |
 | **deep_research**<br>*Performs progressive research; verifies normal execution is allowed up to iteration limits.* | `completed` | 4 / $0.00075 | 4 / $0.00075 | 0 | $0.00000 (0.0%) | `-` | **✅ PASS** |
 | **infinite_loop**<br>*Repeatedly calls the exact same tool and args; verifies loop trip detection at iteration 4.* | `tripped` | 15 / $0.00228 | 5 / $0.00076 | 2,300 | $0.00152 (66.7%) | `repeated_tool_calls` | **✅ PASS** |
+| **canary_research**<br>*Canary Scenario: legitimate deep research using same tool but different args for 6 iterations. Verifies no false positives.* | `completed` | 6 / $0.00107 | 6 / $0.00107 | 0 | $0.00000 (0.0%) | `-` | **✅ PASS** |
 
 ## System Verdict
 
@@ -21,6 +22,17 @@ Each scenario was executed in both **Unguarded** (standard safety ceilings only)
 
 | Compare ID | Topic | Guarded Status | Savings (%) | Tokens Saved | Started At |
 | :--- | :--- | :--- | :--- | :--- | :--- |
+| `comp_canary_research_0f91` | Compare the latest features, releases, and develop... | `completed` | 0.0% | 0 | 2026-06-23 20:51 |
+| `comp_infinite_loop_ed25` | Search for the latest stock price of XYZCorp and r... | `tripped` | 66.7% | 2,300 | 2026-06-23 20:51 |
+| `comp_deep_research_2013` | Analyze the differences in token pricing and conte... | `completed` | 0.0% | 0 | 2026-06-23 20:51 |
+| `comp_simple_info_dc92` | Find the capital of France and its current population | `completed` | 0.0% | 0 | 2026-06-23 20:51 |
+| `comp_canary_research_aff6` | Compare the latest features, releases, and develop... | `tripped` | 0.0% | 0 | 2026-06-23 20:51 |
+| `comp_infinite_loop_c3f0` | Search for the latest stock price of XYZCorp and r... | `tripped` | 66.7% | 2,300 | 2026-06-23 20:51 |
+| `comp_deep_research_ab6e` | Analyze the differences in token pricing and conte... | `completed` | 0.0% | 0 | 2026-06-23 20:51 |
+| `comp_simple_info_273a` | Find the capital of France and its current population | `completed` | 0.0% | 0 | 2026-06-23 20:51 |
+| `comp_61b51c6f` | what is 1 + 1 | `error` | 11.6% | 24 | 2026-06-23 20:49 |
+| `comp_e9c41cf5` | what is 1 + 1 | `error` | 100.0% | 7,837 | 2026-06-23 20:36 |
+| `comp_efbd4247` | what is 1 + 1 | `error` | 100.0% | 243 | 2026-06-23 18:28 |
 | `comp_infinite_loop_9930` | Search for the latest stock price of XYZCorp and r... | `tripped` | 66.7% | 2,300 | 2026-06-23 18:22 |
 | `comp_deep_research_6c75` | Analyze the differences in token pricing and conte... | `completed` | 0.0% | 0 | 2026-06-23 18:22 |
 | `comp_simple_info_cfec` | Find the capital of France and its current population | `completed` | 0.0% | 0 | 2026-06-23 18:22 |
@@ -35,4 +47,4 @@ Each scenario was executed in both **Unguarded** (standard safety ceilings only)
 | `comp_e87a7461` | Why is AGI hard toAGI loop test achieve? | `error` | 95.1% | 27,429 | 2026-06-23 17:33 |
 | `comp_d047ed02` | Why is AGI hard to achieve? | `tripped` | 83.3% | 11,753 | 2026-06-23 17:32 |
 
-*Report generated on: 2026-06-23 23:52:50*
+*Report generated on: 2026-06-24 02:21:53*

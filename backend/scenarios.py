@@ -63,6 +63,44 @@ SCENARIO_MOCKS = {
             input_tokens=150,
             output_tokens=80
         )
+    ],
+    "canary_research": [
+        # Iteration 0
+        MockLLMResponse(
+            content="FINDING: Next.js latest release is v14, offering Server Components and App Router.\nNEXT_QUESTION: What are the latest features and releases for Vite?",
+            input_tokens=150,
+            output_tokens=70
+        ),
+        # Iteration 1
+        MockLLMResponse(
+            content="FINDING: Vite latest version is v5, focusing on performance, rolldown, and SSR improvements.\nNEXT_QUESTION: What are the latest features and releases for Remix?",
+            input_tokens=170,
+            output_tokens=75
+        ),
+        # Iteration 2
+        MockLLMResponse(
+            content="FINDING: Remix version v2 focuses on Vite integration, stable React Router features, and streaming.\nNEXT_QUESTION: What is the development activity (commits/stars) for Next.js?",
+            input_tokens=190,
+            output_tokens=80
+        ),
+        # Iteration 3
+        MockLLMResponse(
+            content="FINDING: Next.js has highly active development on GitHub with 120k+ stars and frequent releases.\nNEXT_QUESTION: What is the development activity (commits/stars) for Vite?",
+            input_tokens=210,
+            output_tokens=85
+        ),
+        # Iteration 4
+        MockLLMResponse(
+            content="FINDING: Vite is extremely popular with 60k+ stars and very high community contributions.\nNEXT_QUESTION: What is the development activity (commits/stars) for Remix?",
+            input_tokens=230,
+            output_tokens=80
+        ),
+        # Iteration 5
+        MockLLMResponse(
+            content="FINDING: Remix has steady growth and development, now part of Shopify.\nNEXT_QUESTION: DONE",
+            input_tokens=250,
+            output_tokens=65
+        )
     ]
 }
 
@@ -81,5 +119,10 @@ SCENARIOS = {
         "topic": "Search for the latest stock price of XYZCorp and repeatedly check if it changes in real-time",
         "expected_status": "tripped",
         "desc": "Repeatedly calls the exact same tool and args; verifies loop trip detection at iteration 4."
+    },
+    "canary_research": {
+        "topic": "Compare the latest features, releases, and development activity of Next.js, Vite, and Remix frameworks",
+        "expected_status": "completed",
+        "desc": "Canary Scenario: legitimate deep research using same tool but different args for 6 iterations. Verifies no false positives."
     }
 }
