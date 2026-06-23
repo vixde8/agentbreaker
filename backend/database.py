@@ -63,6 +63,36 @@ class AgentRun(Base):
     iterations = Column(JSON, default=list)
 
 
+class CompareRun(Base):
+    """
+    Stores a comparison pair — one unguarded run + one guarded run.
+    Created by POST /compare. Savings are computed when both runs finish.
+    """
+    __tablename__ = "compare_runs"
+
+    compare_id          = Column(String, primary_key=True, index=True)
+    topic               = Column(String, nullable=False)
+    status              = Column(String, default="running")  # running | done | error
+    unguarded_run_id    = Column(String, nullable=True)
+    guarded_run_id      = Column(String, nullable=True)
+    # Snapshot of final stats once done
+    unguarded_iterations  = Column(Integer, default=0)
+    unguarded_tokens      = Column(Integer, default=0)
+    unguarded_cost_usd    = Column(Float, default=0.0)
+    unguarded_status      = Column(String, nullable=True)
+    guarded_iterations    = Column(Integer, default=0)
+    guarded_tokens        = Column(Integer, default=0)
+    guarded_cost_usd      = Column(Float, default=0.0)
+    guarded_status        = Column(String, nullable=True)
+    guarded_trip_reason   = Column(String, nullable=True)
+    guarded_trip_message  = Column(String, nullable=True)
+    cost_saved_pct        = Column(Float, default=0.0)
+    tokens_saved          = Column(Integer, default=0)
+    started_at            = Column(DateTime, default=datetime.utcnow)
+    ended_at              = Column(DateTime, nullable=True)
+    config                = Column(JSON, default=dict)
+
+
 def get_db():
     """Dependency — yields a DB session per request."""
     db = SessionLocal()
@@ -74,4 +104,4 @@ def get_db():
 
 def init_db():
     """Create all tables on startup."""
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)

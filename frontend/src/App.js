@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Search,
   Sparkles,
-  GitBranch
+  GitBranch,
+  GitCompare
 } from "lucide-react";
 import "./index.css";
 
@@ -631,6 +632,26 @@ function RunDetail({ runId }) {
         </div>
       </div>
 
+      {/* Error State Callout */}
+      {run.status === "error" && (
+        <div style={{
+          background: "rgba(248, 113, 113, 0.03)",
+          border: "1px solid rgba(248, 113, 113, 0.20)",
+          borderRadius: 10,
+          padding: "16px",
+          marginBottom: 20,
+          boxShadow: `0 0 15px rgba(248, 113, 113, 0.02)`
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: s.red, fontWeight: 800, fontSize: 13, marginBottom: 4 }}>
+            <AlertTriangle size={14} />
+            <span>EXECUTION ERROR</span>
+          </div>
+          <div style={{ color: "#FCA5A5", fontSize: 12, lineHeight: 1.5, fontWeight: 500, fontFamily: "var(--font-mono)" }}>
+            {run.trip_message || "An unexpected error occurred during execution."}
+          </div>
+        </div>
+      )}
+
       {/* Trip alert callout */}
       {run.is_tripped && (
         <div style={{ 
@@ -851,10 +872,529 @@ function RunDetail({ runId }) {
   );
 }
 
+
+function ComparePanel() {
+  const [topic, setTopic] = useState("Why is AGI hard to achieve?");
+  const [maxIter, setMaxIter] = useState(6);
+  const [maxCostInput, setMaxCostInput] = useState("2.00");
+  const [maxCost, setMaxCost] = useState(2.0);
+  const [rules, setRules] = useState([]);
+  const [selectedRules, setSelectedRules] = useState(
+    new Set(["cost_exceeded", "iterations_exceeded", "time_exceeded", "velocity_exceeded", "repeated_tool_calls"])
+  );
+  const [loading, setLoading] = useState(false);
+  const [activeCompare, setActiveCompare] = useState(null);
+  
+  // Detailed states for unguarded and guarded runs to show live stats side-by-side
+  const [ungRun, setUngRun] = useState(null);
+  const [grdRun, setGrdRun] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API}/rules`).then(r => r.json()).then(setRules).catch(console.error);
+  }, []);
+
+  const toggleRule = (id) => {
+    setSelectedRules(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // Poll comparison run status
+  useEffect(() => {
+    if (!activeCompare || activeCompare.status === "done" || activeCompare.status === "error") return;
+
+    let timer;
+    const poll = async () => {
+      try {
+        const res = await fetch(`${API}/compare/${activeCompare.compare_id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setActiveCompare(data);
+
+        // Fetch unguarded details if id exists
+        if (data.unguarded_run_id) {
+          const uRes = await fetch(`${API}/runs/${data.unguarded_run_id}`);
+          if (uRes.ok) setUngRun(await uRes.json());
+        }
+        // Fetch guarded details if id exists
+        if (data.guarded_run_id) {
+          const gRes = await fetch(`${API}/runs/${data.guarded_run_id}`);
+          if (gRes.ok) setGrdRun(await gRes.json());
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    timer = setInterval(poll, 1500);
+    return () => clearInterval(timer);
+  }, [activeCompare]);
+
+  const handleStart = async () => {
+    setLoading(true);
+    setUngRun(null);
+    setGrdRun(null);
+    setActiveCompare(null);
+
+    try {
+      const r = await fetch(`${API}/compare`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          max_iterations: maxIter,
+          max_cost_usd: maxCost,
+          max_time_seconds: 120,
+          max_velocity_per_10s: 0.5,
+          rule_ids: Array.from(selectedRules),
+        })
+      });
+      if (r.ok) {
+        const d = await r.json();
+        // Set initial compare state
+        setActiveCompare({
+          compare_id: d.compare_id,
+          status: "running",
+          topic
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isRunning = activeCompare && activeCompare.status === "running";
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16, alignItems: "start" }}>
+      {/* Config Form Card */}
+      <div className="glass-panel" style={{ borderRadius: 12, padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+          <Sliders size={16} style={{ color: s.teal }} />
+          <div style={{ fontSize: 13, fontWeight: 700, color: s.light, letterSpacing: "0.02em" }}>Configure Compare Mode</div>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <Label><Search size={10} /> Topic</Label>
+          <Input value={topic} onChange={e => setTopic(e.target.value)} icon={Sparkles} />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+          <div>
+            <Label><Activity size={10} /> Max Iterations</Label>
+            <Input type="number" value={maxIter} onChange={e => setMaxIter(Number(e.target.value))} />
+          </div>
+          <div>
+            <Label><Coins size={10} /> Max Cost ($)</Label>
+            <Input 
+              type="text" 
+              value={maxCostInput} 
+              onChange={e => setMaxCostInput(e.target.value)} 
+              onBlur={() => setMaxCost(parseFloat(maxCostInput) || 0)} 
+            />
+          </div>
+        </div>
+
+        <Label><FileText size={10} /> Guardrails (Guarded Run)</Label>
+        <div style={{ 
+          marginBottom: 16, 
+          maxHeight: 180, 
+          overflowY: "auto", 
+          paddingRight: 4, 
+          border: `1px solid ${s.border}`, 
+          borderRadius: 8, 
+          background: "rgba(10, 15, 26, 0.4)",
+          padding: "4px 8px"
+        }}>
+          {rules.map(rule => (
+            <label key={rule.id} className="custom-checkbox-wrapper" style={{
+              display: "flex", 
+              alignItems: "flex-start", 
+              gap: 10,
+              padding: "8px 0", 
+              cursor: "pointer",
+              borderBottom: rule.id !== rules[rules.length-1].id ? `1px solid ${s.border}` : "none"
+            }}>
+              <input
+                type="checkbox"
+                checked={selectedRules.has(rule.id)}
+                onChange={() => toggleRule(rule.id)}
+              />
+              <div className="custom-switch-slider" style={{ marginTop: 2, flexShrink: 0 }} />
+              <div style={{ marginLeft: 2 }}>
+                <div style={{ fontSize: 11, color: s.light, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  {rule.name}
+                  {rule.severity === "warn" ? (
+                    <Tag color="teal">Warning Only</Tag>
+                  ) : (
+                    <Tag color="red">STOP</Tag>
+                  )}
+                </div>
+                <div style={{ fontSize: 9.5, color: s.muted, lineHeight: 1.3, marginTop: 2 }}>{rule.description}</div>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        <button onClick={handleStart} disabled={loading || isRunning} style={{
+          width: "100%", 
+          background: (loading || isRunning) ? "rgba(31, 41, 55, 0.8)" : `linear-gradient(135deg, ${s.teal}, ${s.green})`,
+          color: s.light,
+          border: "none", 
+          borderRadius: 8, 
+          padding: "11px 0",
+          fontSize: 12, 
+          fontWeight: 800, 
+          cursor: (loading || isRunning) ? "default" : "pointer",
+          letterSpacing: "0.06em", 
+          textTransform: "uppercase", 
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          boxShadow: (loading || isRunning) ? "none" : `0 4px 14px ${s.tealGlow}`,
+        }}
+        onMouseEnter={(e) => {
+          if (!loading && !isRunning) {
+            e.currentTarget.style.transform = "translateY(-1px)";
+            e.currentTarget.style.boxShadow = `0 6px 18px rgba(20, 184, 166, 0.3)`;
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "none";
+          e.currentTarget.style.boxShadow = (loading || isRunning) ? "none" : `0 4px 14px ${s.tealGlow}`;
+        }}>
+          {(loading || isRunning) ? (
+            <>
+              <RefreshCw size={14} className="heartbeat-dot" />
+              <span>Comparing runs...</span>
+            </>
+          ) : (
+            <>
+              <Play size={12} fill="currentColor" />
+              <span>Run Side-by-Side</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Comparison Workspace */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {!activeCompare && (
+          <div className="glass-panel" style={{
+            borderRadius: 12,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 400,
+            textAlign: "center",
+            padding: 30
+          }}>
+            <div style={{
+              width: 60,
+              height: 60,
+              borderRadius: "50%",
+              background: `radial-gradient(circle, ${s.blue}20 0%, transparent 70%)`,
+              border: `1px solid ${s.blue}15`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16
+            }}>
+              <GitCompare size={24} style={{ color: s.blue }} />
+            </div>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: s.light, marginBottom: 6 }}>Side-by-Side Comparison Workspace</h3>
+            <p style={{ color: s.muted, fontSize: 12, maxWidth: 400, lineHeight: 1.5 }}>
+              Choose a topic and select your guardrail configuration. AgentBreaker will run a standard unguarded agent run first (up to 20 steps / $2 limit), followed by a guarded run using your policy, displaying their live telemetry side-by-side with automatic cost and token savings calculation.
+            </p>
+          </div>
+        )}
+
+        {activeCompare && (
+          <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Status Header */}
+            <div className="glass-panel" style={{ borderRadius: 12, padding: "16px 20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 10, color: s.muted, fontFamily: "var(--font-mono)", background: "rgba(255,255,255,0.03)", padding: "2px 6px", borderRadius: 4 }}>
+                      COMPARISON ID: {activeCompare.compare_id}
+                    </span>
+                    {isRunning ? (
+                      <Tag color="blue">Running Live</Tag>
+                    ) : activeCompare.status === "done" ? (
+                      <Tag color="green">Done</Tag>
+                    ) : (
+                      <Tag color="red">Failed/Error</Tag>
+                    )}
+                  </div>
+                  <h3 style={{ fontSize: 14, fontWeight: 800, color: s.light }}>{activeCompare.topic}</h3>
+                </div>
+                {isRunning && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: s.blue, fontSize: 12, fontWeight: 600 }}>
+                    <RefreshCw size={14} className="heartbeat-dot" />
+                    <span>
+                      {!ungRun || ungRun.status === "running" 
+                        ? "Executing Unguarded Run..." 
+                        : "Executing Guarded Run..."}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Side-by-Side Layout */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {/* Unguarded Panel */}
+              <div className="glass-panel" style={{ 
+                borderRadius: 12, 
+                padding: 20, 
+                border: `1px solid ${ungRun?.status === "running" ? s.red : s.border}`,
+                boxShadow: ungRun?.status === "running" ? `0 0 15px ${s.redGlow}` : "none"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.red }} />
+                    <span style={{ fontSize: 13, fontWeight: 800, color: s.light }}>Unguarded Run</span>
+                  </div>
+                  {ungRun && (
+                    <span style={{ fontSize: 9.5, color: s.muted, fontFamily: "var(--font-mono)" }}>
+                      {ungRun.run_id}
+                    </span>
+                  )}
+                </div>
+
+                {ungRun ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <StatBox label="Iterations" value={ungRun.iteration_count} icon={Activity} />
+                      <StatBox label="Total Spend" value={`$${(ungRun.total_cost_usd ?? 0).toFixed(4)}`} accent={s.red} icon={Coins} />
+                    </div>
+                    <StatBox label="Total Tokens" value={ungRun.total_tokens?.toLocaleString() || "0"} icon={Cpu} />
+                    
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: s.muted, borderTop: `1px solid ${s.border}`, paddingTop: 10, marginTop: 4 }}>
+                      <span>Status:</span>
+                      <span style={{ fontWeight: 700, color: ungRun.status === "running" ? s.red : s.light }}>
+                        {ungRun.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    {ungRun.status === "error" && (
+                      <div style={{ 
+                        background: "rgba(248, 113, 113, 0.05)", 
+                        border: "1px solid rgba(248, 113, 113, 0.15)", 
+                        borderRadius: 8, 
+                        padding: "8px 10px", 
+                        fontSize: 10.5, 
+                        color: "#FCA5A5",
+                        marginTop: 4
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, color: s.red, marginBottom: 2 }}>
+                          <AlertTriangle size={11} />
+                          <span>Error Occurred</span>
+                        </div>
+                        <span style={{ fontSize: 9.5, lineHeight: 1.3, fontFamily: "var(--font-mono)" }}>
+                          {ungRun.trip_message || "Unexpected run error."}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", justify: "center", minHeight: 140, color: s.muted, fontSize: 12 }}>
+                    Waiting to start...
+                  </div>
+                )}
+              </div>
+
+              {/* Guarded Panel */}
+              <div className="glass-panel" style={{ 
+                borderRadius: 12, 
+                padding: 20, 
+                border: `1px solid ${grdRun?.status === "running" ? s.teal : grdRun?.status === "tripped" ? s.red : s.border}`,
+                boxShadow: grdRun?.status === "running" ? `0 0 15px ${s.tealGlow}` : grdRun?.status === "tripped" ? `0 0 15px ${s.redGlow}` : "none"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.teal }} />
+                    <span style={{ fontSize: 13, fontWeight: 800, color: s.light }}>Guarded Run</span>
+                  </div>
+                  {grdRun && (
+                    <span style={{ fontSize: 9.5, color: s.muted, fontFamily: "var(--font-mono)" }}>
+                      {grdRun.run_id}
+                    </span>
+                  )}
+                </div>
+
+                {grdRun ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <StatBox label="Iterations" value={grdRun.iteration_count} icon={Activity} />
+                      <StatBox label="Total Spend" value={`$${(grdRun.total_cost_usd ?? 0).toFixed(4)}`} accent={s.teal} icon={Coins} />
+                    </div>
+                    <StatBox label="Total Tokens" value={grdRun.total_tokens?.toLocaleString() || "0"} icon={Cpu} />
+
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: s.muted, borderTop: `1px solid ${s.border}`, paddingTop: 10, marginTop: 4 }}>
+                      <span>Status:</span>
+                      <span style={{ 
+                        fontWeight: 700, 
+                        color: grdRun.status === "running" ? s.teal : grdRun.status === "tripped" ? s.red : s.green 
+                      }}>
+                        {grdRun.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    {grdRun.status === "error" && (
+                      <div style={{ 
+                        background: "rgba(248, 113, 113, 0.05)", 
+                        border: "1px solid rgba(248, 113, 113, 0.15)", 
+                        borderRadius: 8, 
+                        padding: "8px 10px", 
+                        fontSize: 10.5, 
+                        color: "#FCA5A5",
+                        marginTop: 4
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, color: s.red, marginBottom: 2 }}>
+                          <AlertTriangle size={11} />
+                          <span>Error Occurred</span>
+                        </div>
+                        <span style={{ fontSize: 9.5, lineHeight: 1.3, fontFamily: "var(--font-mono)" }}>
+                          {grdRun.trip_message || "Unexpected run error."}
+                        </span>
+                      </div>
+                    )}
+
+                    {grdRun.is_tripped && (
+                      <div style={{ 
+                        background: "rgba(248, 113, 113, 0.05)", 
+                        border: "1px solid rgba(248, 113, 113, 0.15)", 
+                        borderRadius: 8, 
+                        padding: "8px 10px", 
+                        fontSize: 10.5, 
+                        color: "#FCA5A5",
+                        marginTop: 4
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, color: s.red, marginBottom: 2 }}>
+                          <Zap size={11} fill="currentColor" />
+                          <span>Guards Fired: {grdRun.trip_reason}</span>
+                        </div>
+                        <span style={{ fontSize: 9.5, lineHeight: 1.3 }}>{grdRun.trip_message}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", justify: "center", minHeight: 140, color: s.muted, fontSize: 12 }}>
+                    {activeCompare.status === "running" && (!ungRun || ungRun.status === "running") 
+                      ? "Guarded run will start after unguarded completes..." 
+                      : "Waiting to start..."}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Savings Banner */}
+            {activeCompare.status === "done" && (
+              <div style={{
+                background: (ungRun?.status === "error" || grdRun?.status === "error")
+                  ? `linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(248, 113, 113, 0.15) 100%)`
+                  : `linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(20, 184, 166, 0.15) 100%)`,
+                border: `1px solid ${(ungRun?.status === "error" || grdRun?.status === "error") ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
+                boxShadow: `0 8px 30px ${(ungRun?.status === "error" || grdRun?.status === "error") ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)"}`,
+                borderRadius: 12,
+                padding: "20px 24px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 16
+              }}>
+                <div>
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: 6, 
+                    color: (ungRun?.status === "error" || grdRun?.status === "error") ? s.red : s.green, 
+                    fontSize: 11, 
+                    fontWeight: 800, 
+                    textTransform: "uppercase", 
+                    letterSpacing: "0.08em", 
+                    marginBottom: 4 
+                  }}>
+                    {(ungRun?.status === "error" || grdRun?.status === "error") ? (
+                      <>
+                        <AlertTriangle size={13} />
+                        <span>Comparison Run Interrupted</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={13} fill="currentColor" />
+                        <span>AgentBreaker Savings Analysis</span>
+                      </>
+                    )}
+                  </div>
+                  <h4 style={{ fontSize: 13, fontWeight: 500, color: s.light, marginTop: 4, maxWidth: 550, lineHeight: 1.4 }}>
+                    {(ungRun?.status === "error" || grdRun?.status === "error") ? (
+                      <span>
+                        One or both runs failed due to an execution error (e.g. Daily Token Limit Exceeded). Please review the errors in the cards above.
+                      </span>
+                    ) : activeCompare.tokens_saved > 0 ? (
+                      <span>
+                        Prevented runaway loop: Intercepted Guarded Run at iteration <strong style={{ color: s.teal }}>{grdRun?.iteration_count}</strong> instead of letting it run to iteration <strong style={{ color: s.red }}>{ungRun?.iteration_count}</strong> (tripped by: <strong style={{ color: s.red }}>{grdRun?.trip_reason || "policy limit"}</strong>).
+                      </span>
+                    ) : (
+                      "Both runs completed cleanly within configured policy limits."
+                    )}
+                  </h4>
+                </div>
+
+                <div style={{ display: "flex", gap: 24 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ 
+                      fontSize: 28, 
+                      fontWeight: 900, 
+                      color: (ungRun?.status === "error" || grdRun?.status === "error") ? s.muted : s.green, 
+                      textShadow: (ungRun?.status === "error" || grdRun?.status === "error") ? "none" : `0 0 15px rgba(52, 211, 153, 0.2)` 
+                    }}>
+                      {(ungRun?.status === "error" || grdRun?.status === "error") ? "N/A" : `${activeCompare.cost_saved_pct}%`}
+                    </div>
+                    <div style={{ fontSize: 9.5, color: s.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Cost Saved
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ 
+                      fontSize: 28, 
+                      fontWeight: 900, 
+                      color: (ungRun?.status === "error" || grdRun?.status === "error") ? s.muted : s.teal, 
+                      textShadow: (ungRun?.status === "error" || grdRun?.status === "error") ? "none" : `0 0 15px rgba(20, 184, 166, 0.2)` 
+                    }}>
+                      {(ungRun?.status === "error" || grdRun?.status === "error") ? "N/A" : activeCompare.tokens_saved.toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: 9.5, color: s.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Tokens Saved
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 // ── App shell ──────────────────────────────────────────────────────────────
 export default function App() {
   const [runs,     setRuns]     = useState([]);
   const [selected, setSelected] = useState(null);
+  const [page,     setPage]     = useState("console"); // "console" | "compare"
 
   const fetchRuns = useCallback(async () => {
     try {
@@ -942,6 +1482,52 @@ export default function App() {
             <GitBranch size={13} />
             <span>GitHub</span>
           </a>
+
+          {/* Navigation Links for Console vs Compare */}
+          <div style={{ display: "flex", gap: 4, background: "rgba(255, 255, 255, 0.02)", border: `1px solid ${s.border}`, borderRadius: 8, padding: 3 }}>
+            <button
+              onClick={() => setPage("console")}
+              style={{
+                background: page === "console" ? "rgba(20, 184, 166, 0.12)" : "transparent",
+                border: "none",
+                color: page === "console" ? s.teal : s.muted,
+                borderRadius: 6,
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: page === "console" ? 700 : 500,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                fontFamily: "inherit",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6
+              }}
+            >
+              <Zap size={13} />
+              <span>Console</span>
+            </button>
+            <button
+              onClick={() => setPage("compare")}
+              style={{
+                background: page === "compare" ? "rgba(20, 184, 166, 0.12)" : "transparent",
+                border: "none",
+                color: page === "compare" ? s.teal : s.muted,
+                borderRadius: 6,
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: page === "compare" ? 700 : 500,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                fontFamily: "inherit",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6
+              }}
+            >
+              <GitCompare size={13} />
+              <span>Compare Mode</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -949,60 +1535,65 @@ export default function App() {
         {/* Metrics bar */}
         <MetricsBar />
 
-        {/* Console layout */}
-        <div className="dashboard-grid" style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16, alignItems: "start" }}>
-          {/* Left column */}
-          <div>
-            <StartRunForm onStarted={handleStarted} />
-            
-            <div style={{ 
-              fontSize: 10, 
-              fontWeight: 800, 
-              color: s.muted, 
-              textTransform: "uppercase", 
-              letterSpacing: "0.08em", 
-              margin: "20px 0 10px 4px",
-              display: "flex",
-              alignItems: "center",
-              gap: 6
-            }}>
-              <Activity size={10} />
-              <span>Active Policy Executions</span>
-              <span className="tabular-numbers" style={{ 
-                fontSize: 9, 
-                background: "rgba(255,255,255,0.05)", 
-                padding: "1px 5px", 
-                borderRadius: 4, 
-                marginLeft: "auto" 
-              }}>{runs.length} runs</span>
-            </div>
-            
-            {runs.length === 0 && (
-              <div className="glass-panel" style={{ 
-                borderRadius: 10, 
-                padding: "20px 14px", 
-                textAlign: "center", 
-                borderStyle: "dashed" 
+        {page === "console" ? (
+          /* Console layout */
+          <div className="dashboard-grid" style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16, alignItems: "start" }}>
+            {/* Left column */}
+            <div>
+              <StartRunForm onStarted={handleStarted} />
+              
+              <div style={{ 
+                fontSize: 10, 
+                fontWeight: 800, 
+                color: s.muted, 
+                textTransform: "uppercase", 
+                letterSpacing: "0.08em", 
+                margin: "20px 0 10px 4px",
+                display: "flex",
+                alignItems: "center",
+                gap: 6
               }}>
-                <p style={{ color: s.muted, fontSize: 11 }}>No runs stored in the local database.</p>
+                <Activity size={10} />
+                <span>Active Policy Executions</span>
+                <span className="tabular-numbers" style={{ 
+                  fontSize: 9, 
+                  background: "rgba(255,255,255,0.05)", 
+                  padding: "1px 5px", 
+                  borderRadius: 4, 
+                  marginLeft: "auto" 
+                }}>{runs.length} runs</span>
               </div>
-            )}
-            
-            <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: 4 }}>
-              {runs.map(r => (
-                <RunCard 
-                  key={r.run_id} 
-                  run={r}
-                  isSelected={selected === r.run_id}
-                  onClick={() => setSelected(r.run_id)} 
-                />
-              ))}
+              
+              {runs.length === 0 && (
+                <div className="glass-panel" style={{ 
+                  borderRadius: 10, 
+                  padding: "20px 14px", 
+                  textAlign: "center", 
+                  borderStyle: "dashed" 
+                }}>
+                  <p style={{ color: s.muted, fontSize: 11 }}>No runs stored in the local database.</p>
+                </div>
+              )}
+              
+              <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: 4 }}>
+                {runs.map(r => (
+                  <RunCard 
+                    key={r.run_id} 
+                    run={r}
+                    isSelected={selected === r.run_id}
+                    onClick={() => setSelected(r.run_id)} 
+                  />
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Right column */}
-          <RunDetail runId={selected} />
-        </div>
+            {/* Right column */}
+            <RunDetail runId={selected} />
+          </div>
+        ) : (
+          /* Compare Panel layout */
+          <ComparePanel />
+        )}
       </div>
     </div>
   );

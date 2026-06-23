@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from rules import build_default_engine, build_engine_from_ids, BUILTIN_RULES
-from database import AgentRun, get_db, init_db
+from database import AgentRun, CompareRun, get_db, init_db
 from circuit_breaker import CircuitBreaker
 from agent import run_agent
 
@@ -42,6 +42,16 @@ class StartRunRequest(BaseModel):
     max_time_seconds: float = 120.0
     max_velocity_per_10s: float = 0.50
     rule_ids: Optional[list[str]] = None   # if None, uses default rule set
+
+
+class CompareRequest(BaseModel):
+    topic: str
+    max_iterations: int = 6
+    max_cost_usd: float = 2.00
+    max_time_seconds: float = 120.0
+    max_velocity_per_10s: float = 0.50
+    rule_ids: Optional[list[str]] = None
+
 
 
 class RunResponse(BaseModel):
@@ -86,6 +96,33 @@ def run_to_response(run: AgentRun) -> dict:
     }
 
 
+def compare_to_response(cr: CompareRun) -> dict:
+    """Convert a CompareRun DB row to a clean API response dict."""
+    return {
+        "compare_id": cr.compare_id,
+        "topic": cr.topic,
+        "status": cr.status,
+        "unguarded_run_id": cr.unguarded_run_id,
+        "guarded_run_id": cr.guarded_run_id,
+        "unguarded_iterations": cr.unguarded_iterations,
+        "unguarded_tokens": cr.unguarded_tokens,
+        "unguarded_cost_usd": cr.unguarded_cost_usd,
+        "unguarded_status": cr.unguarded_status,
+        "guarded_iterations": cr.guarded_iterations,
+        "guarded_tokens": cr.guarded_tokens,
+        "guarded_cost_usd": cr.guarded_cost_usd,
+        "guarded_status": cr.guarded_status,
+        "guarded_trip_reason": cr.guarded_trip_reason,
+        "guarded_trip_message": cr.guarded_trip_message,
+        "cost_saved_pct": cr.cost_saved_pct,
+        "tokens_saved": cr.tokens_saved,
+        "started_at": cr.started_at.isoformat() if cr.started_at else None,
+        "ended_at": cr.ended_at.isoformat() if cr.ended_at else None,
+        "config": cr.config or {},
+    }
+
+
+
 def execute_run(run_id: str, topic: str, rule_engine):
     """
     Runs the agent in a background thread.
@@ -114,6 +151,8 @@ def execute_run(run_id: str, topic: str, rule_engine):
             raise
         # Still running — persist live state
         _persist_state(db, run_id, breaker, topic, status="running")
+        # Rate limit safety delay
+        time.sleep(2.0)
 
     breaker.record_llm_call = record_and_persist
 
@@ -123,6 +162,7 @@ def execute_run(run_id: str, topic: str, rule_engine):
     except RuntimeError:
         pass  # Already persisted in wrapper above
     except Exception as e:
+        breaker.state.trip_message = str(e)
         _persist_state(db, run_id, breaker, topic, status="error")
         print(f"Unexpected error in run {run_id}: {e}")
     finally:
@@ -272,4 +312,195 @@ def get_metrics(db: Session = Depends(get_db)):
         "estimated_cost_saved_usd": round(cost_saved, 4),
         "trip_rate_pct": round(len(tripped) / total_runs * 100, 1) if total_runs else 0,
     }
+
+
+def run_comparison_thread(compare_id: str, topic: str, config: dict, rule_ids: list[str]):
+    """Background task running unguarded and guarded runs sequentially."""
+    from database import SessionLocal, AgentRun, CompareRun
+    from rules import build_engine_from_ids, build_default_engine
+    import uuid
+
+    # 1. RUN UNGUARDED
+    unguarded_run_id = f"ung_{str(uuid.uuid4())[:5]}"
+    unguarded_config = {
+        "max_iterations": 20,
+        "max_cost_usd": 2.00,
+        "max_time_seconds": 120.0,
+        "max_velocity_per_10s": 0.50,
+        "rule_ids": []
+    }
+    
+    db = SessionLocal()
+    try:
+        u_run = AgentRun(
+            run_id=unguarded_run_id,
+            topic=topic,
+            status="running",
+            started_at=datetime.utcnow(),
+            config=unguarded_config,
+            iterations=[],
+        )
+        db.add(u_run)
+        cr = db.query(CompareRun).filter(CompareRun.compare_id == compare_id).first()
+        if cr:
+            cr.unguarded_run_id = unguarded_run_id
+        db.commit()
+    except Exception as e:
+        print(f"Error starting unguarded in compare run {compare_id}: {e}")
+    finally:
+        db.close()
+
+    # Run unguarded sequentially
+    try:
+        u_engine = build_engine_from_ids([], unguarded_config)
+        execute_run(unguarded_run_id, topic, u_engine)
+    except Exception as e:
+        print(f"Error executing unguarded in compare run {compare_id}: {e}")
+
+    # Snapshot unguarded stats
+    db = SessionLocal()
+    try:
+        u_run = db.query(AgentRun).filter(AgentRun.run_id == unguarded_run_id).first()
+        cr = db.query(CompareRun).filter(CompareRun.compare_id == compare_id).first()
+        if u_run and cr:
+            cr.unguarded_iterations = u_run.iteration_count
+            cr.unguarded_tokens = u_run.total_tokens
+            cr.unguarded_cost_usd = u_run.total_cost_usd
+            cr.unguarded_status = u_run.status
+        db.commit()
+    except Exception as e:
+        print(f"Error updating unguarded stats in compare run {compare_id}: {e}")
+    finally:
+        db.close()
+
+    # 2. RUN GUARDED
+    guarded_run_id = f"grd_{str(uuid.uuid4())[:5]}"
+    db = SessionLocal()
+    try:
+        g_run = AgentRun(
+            run_id=guarded_run_id,
+            topic=topic,
+            status="running",
+            started_at=datetime.utcnow(),
+            config=config,
+            iterations=[],
+        )
+        db.add(g_run)
+        cr = db.query(CompareRun).filter(CompareRun.compare_id == compare_id).first()
+        if cr:
+            cr.guarded_run_id = guarded_run_id
+        db.commit()
+    except Exception as e:
+        print(f"Error starting guarded in compare run {compare_id}: {e}")
+    finally:
+        db.close()
+
+    # Run guarded sequentially
+    try:
+        if rule_ids is not None:
+            g_engine = build_engine_from_ids(rule_ids, config)
+        else:
+            g_engine = build_default_engine(config)
+        execute_run(guarded_run_id, topic, g_engine)
+    except Exception as e:
+        print(f"Error executing guarded in compare run {compare_id}: {e}")
+
+    # Final stats, savings, and update CompareRun
+    db = SessionLocal()
+    try:
+        g_run = db.query(AgentRun).filter(AgentRun.run_id == guarded_run_id).first()
+        u_run = db.query(AgentRun).filter(AgentRun.run_id == unguarded_run_id).first()
+        cr = db.query(CompareRun).filter(CompareRun.compare_id == compare_id).first()
+        if cr:
+            if g_run:
+                cr.guarded_iterations = g_run.iteration_count
+                cr.guarded_tokens = g_run.total_tokens
+                cr.guarded_cost_usd = g_run.total_cost_usd
+                cr.guarded_status = g_run.status
+                cr.guarded_trip_reason = g_run.trip_reason
+                cr.guarded_trip_message = g_run.trip_message
+
+            if u_run and g_run:
+                # Compute savings
+                u_cost = u_run.total_cost_usd
+                g_cost = g_run.total_cost_usd
+                if u_cost > 0:
+                    saved_pct = ((u_cost - g_cost) / u_cost) * 100
+                    cr.cost_saved_pct = round(max(0.0, saved_pct), 1)
+                else:
+                    cr.cost_saved_pct = 0.0
+                
+                cr.tokens_saved = max(0, u_run.total_tokens - g_run.total_tokens)
+            
+            cr.status = "done"
+            cr.ended_at = datetime.utcnow()
+        db.commit()
+    except Exception as e:
+        print(f"Error finishing compare run {compare_id}: {e}")
+        try:
+            cr = db.query(CompareRun).filter(CompareRun.compare_id == compare_id).first()
+            if cr:
+                cr.status = "error"
+            db.commit()
+        except Exception:
+            pass
+    finally:
+        db.close()
+
+
+@app.post("/compare")
+def start_compare(request: CompareRequest, db: Session = Depends(get_db)):
+    """
+    Start a side-by-side comparison.
+    Runs one unguarded run first, then one guarded run in a background thread.
+    """
+    compare_id = "comp_" + str(uuid.uuid4())[:8]
+
+    config = {
+        "max_iterations": request.max_iterations,
+        "max_cost_usd": request.max_cost_usd,
+        "max_time_seconds": request.max_time_seconds,
+        "max_velocity_per_10s": request.max_velocity_per_10s,
+    }
+
+    if request.rule_ids is not None:
+        rule_ids = request.rule_ids
+    else:
+        rule_ids = [r.id for r in build_default_engine(config).rules]
+
+    compare_run = CompareRun(
+        compare_id=compare_id,
+        topic=request.topic,
+        status="running",
+        started_at=datetime.utcnow(),
+        config={**config, "rule_ids": rule_ids},
+    )
+    db.add(compare_run)
+    db.commit()
+
+    thread = threading.Thread(
+        target=run_comparison_thread,
+        args=(compare_id, request.topic, config, rule_ids),
+        daemon=True
+    )
+    thread.start()
+
+    return {"compare_id": compare_id, "status": "started"}
+
+
+@app.get("/compare/{compare_id}")
+def get_compare(compare_id: str, db: Session = Depends(get_db)):
+    """Fetch status of a comparison run."""
+    cr = db.query(CompareRun).filter(CompareRun.compare_id == compare_id).first()
+    if not cr:
+        raise HTTPException(status_code=404, detail="Comparison run not found")
+    return compare_to_response(cr)
+
+
+@app.get("/compare")
+def list_comparisons(db: Session = Depends(get_db)):
+    """List all comparisons, most recent first."""
+    runs = db.query(CompareRun).order_by(CompareRun.started_at.desc()).all()
+    return [compare_to_response(r) for r in runs]
+
 
