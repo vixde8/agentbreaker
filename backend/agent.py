@@ -39,11 +39,23 @@ def create_llm(callbacks=None):
 def mock_search_tool(query: str) -> str:
     """
     Simulates a web search result.
-    Returns vague results that make the agent want to keep searching —
-    this is what triggers the stuck-loop scenario in demos.
-
-    In a real integration, replace this with Serper, Tavily, DuckDuckGo, etc.
+    Returns direct facts for normal queries, but vague looping results for loop tests.
     """
+    query_lower = query.lower()
+    if "1 + 1" in query_lower or "1+1" in query_lower:
+        return "Search results: 1 + 1 is equal to 2."
+    elif "france" in query_lower or "paris" in query_lower:
+        return "Search results: The capital of France is Paris. Paris has a population of approximately 2.1 million."
+    elif "groq" in query_lower and "openai" in query_lower:
+        return (
+            "Search results: Groq costs $0.59/$0.79 per 1M tokens. "
+            "OpenAI GPT-4o costs $5/$15 per 1M tokens. "
+            "Anthropic Claude 3.5 Sonnet costs $3/$15 per 1M tokens."
+        )
+    elif "xyzcorp" in query_lower or "stock price" in query_lower:
+        # Keeps loop detector testing functional
+        return "Search results for XYZCorp stock: Price currently fluctuating. Please check again in real-time."
+    
     return (
         f"Search results for '{query}': "
         f"Found several interesting angles. "
