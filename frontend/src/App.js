@@ -873,16 +873,6 @@ export default function App() {
   }, [fetchRuns]);
 
   const handleStarted = id => { setSelected(id); setTimeout(fetchRuns, 500); };
-  
-  const handleClear = async () => {
-    try {
-      await fetch(`${API}/runs`, { method: "DELETE" }); 
-      setRuns([]); 
-      setSelected(null); 
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 28px 40px" }}>
@@ -954,36 +944,6 @@ export default function App() {
             <span>GitHub</span>
           </a>
         </div>
-
-        {/* Action Button (Database reset) */}
-        <button onClick={handleClear} style={{
-          background: "rgba(248, 113, 113, 0.04)",
-          border: `1px solid rgba(248, 113, 113, 0.15)`,
-          color: "#FCA5A5", 
-          borderRadius: 8, 
-          padding: "8px 16px",
-          fontSize: 11, 
-          fontWeight: 700,
-          cursor: "pointer", 
-          letterSpacing: "0.04em",
-          textTransform: "uppercase", 
-          fontFamily: "inherit",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          transition: "all 0.2s"
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(248, 113, 113, 0.08)";
-          e.currentTarget.style.borderColor = s.red;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(248, 113, 113, 0.04)";
-          e.currentTarget.style.borderColor = "rgba(248, 113, 113, 0.15)";
-        }}>
-          <Trash2 size={13} />
-          Reset DB
-        </button>
       </div>
 
       <div className="fade-in">
