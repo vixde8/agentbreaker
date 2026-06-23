@@ -3,12 +3,14 @@ run_verification.py
 Automated benchmark and verification suite runner for AgentBreaker v2.1.
 Runs scenarios under unguarded and guarded conditions, persists them to the database,
 retrieves historical comparison runs from the database, and compiles validation_report.md.
+Supports --real mode for live LLM and real tool execution.
 """
 
 import os
 import sys
 import time
 import uuid
+import argparse
 from datetime import datetime
 from unittest.mock import patch
 
@@ -31,7 +33,6 @@ class MockChatGroq:
     def invoke(self, messages):
         responses = SCENARIO_MOCKS.get(self.scenario_name, [])
         if self.scenario_name == "infinite_loop":
-            # Infinite loop always returns the same prompt-query response
             resp = responses[0]
         else:
             if self.iteration < len(responses):
@@ -122,7 +123,7 @@ def save_compare_to_db(db, compare_id: str, topic: str, config: dict, ung_run_id
     cr.ended_at = datetime.utcnow()
     db.commit()
 
-def run_scenario(db, scenario_key: str, guarded: bool) -> tuple[str, dict]:
+def run_scenario(db, scenario_key: str, guarded: bool, real: bool = False) -> tuple[str, dict]:
     scenario = SCENARIOS[scenario_key]
     topic = scenario["topic"]
     
@@ -131,7 +132,7 @@ def run_scenario(db, scenario_key: str, guarded: bool) -> tuple[str, dict]:
     # Configure limits
     if guarded:
         config = {
-            "max_iterations": 6,
+            "max_iterations": 8,
             "max_cost_usd": 2.00,
             "max_time_seconds": 120.0,
             "max_velocity_per_10s": 0.50,
@@ -148,17 +149,12 @@ def run_scenario(db, scenario_key: str, guarded: bool) -> tuple[str, dict]:
         rule_engine = build_engine_from_ids(["cost_exceeded", "iterations_exceeded"], config)
         
     breaker = CircuitBreaker(run_id=run_id, config=config, rule_engine=rule_engine)
-    
-    # Create the mock model generator
-    def mock_create_llm(callbacks=None):
-        return MockChatGroq(scenario_key, callbacks)
-        
     status = "completed"
     
-    # Run the agent with patched LLM and sleep
-    with patch("agent.create_llm", mock_create_llm), patch("time.sleep", return_value=None):
+    if real:
+        from realistic_agent import run_realistic_agent
         try:
-            run_agent(topic, breaker)
+            run_realistic_agent(topic, breaker)
         except RuntimeError as e:
             if "tripped" in str(e):
                 status = "tripped"
@@ -166,11 +162,35 @@ def run_scenario(db, scenario_key: str, guarded: bool) -> tuple[str, dict]:
                 status = "error"
         except Exception:
             status = "error"
+    else:
+        # Create the mock model generator
+        def mock_create_llm(callbacks=None):
+            return MockChatGroq(scenario_key, callbacks)
+            
+        # Run the agent with patched LLM and sleep
+        with patch("agent.create_llm", mock_create_llm), patch("time.sleep", return_value=None):
+            try:
+                run_agent(topic, breaker)
+            except RuntimeError as e:
+                if "tripped" in str(e):
+                    status = "tripped"
+                else:
+                    status = "error"
+            except Exception:
+                status = "error"
             
     # Persist agent run state
     save_run_to_db(db, run_id, topic, status, breaker, config)
     
     summary = breaker.get_summary()
+    
+    # Print tool call logs to confirm captures
+    if summary["tool_calls"]:
+        print("  [Verification] Captured Tool Call Log:")
+        for tc in summary["tool_calls"]:
+            result_snippet = str(tc['result'])[:80] + "..." if tc['result'] else "None"
+            print(f"    - Name: {tc['name']}, Args: {tc['args']}, Result: {result_snippet}")
+            
     return run_id, {
         "status": status,
         "iterations": summary["iteration_count"],
@@ -181,8 +201,14 @@ def run_scenario(db, scenario_key: str, guarded: bool) -> tuple[str, dict]:
     }
 
 def main():
+    parser = argparse.ArgumentParser(description="AgentBreaker Verification Suite")
+    parser.add_argument("--real", action="store_true", help="Run with real agents and live API calls")
+    args = parser.parse_args()
+
+    mode_label = "REAL AGENT MODE (LIVE LLM)" if args.real else "MOCK SIMULATOR MODE (OFFLINE)"
     print("=" * 60)
-    print("RUNNING AGENTBREAKER v2.1 AUTOMATED VERIFICATION BENCHMARK SUITE")
+    print(f"RUNNING AGENTBREAKER v2.1 AUTOMATED VERIFICATION BENCHMARK SUITE")
+    print(f"Mode: {mode_label}")
     print("=" * 60)
     
     # Initialize DB schema
@@ -197,12 +223,12 @@ def main():
             
             # 1. Run Unguarded
             print("  Running Unguarded...")
-            ung_run_id, ung_res = run_scenario(db, key, guarded=False)
+            ung_run_id, ung_res = run_scenario(db, key, guarded=False, real=args.real)
             print(f"    -> Status: {ung_res['status']}, Iterations: {ung_res['iterations']}, Cost: ${ung_res['cost']:.5f}")
             
             # 2. Run Guarded
             print("  Running Guarded...")
-            grd_run_id, grd_res = run_scenario(db, key, guarded=True)
+            grd_run_id, grd_res = run_scenario(db, key, guarded=True, real=args.real)
             print(f"    -> Status: {grd_res['status']}, Iterations: {grd_res['iterations']}, Cost: ${grd_res['cost']:.5f}")
             
             # Calculate Savings
